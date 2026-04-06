@@ -1,0 +1,31 @@
+schema: spec-driven
+
+context: |
+  Product: 高端、极简、偏技术气质的 AI 资讯聚合平台
+  Primary stack: Next.js, React, TypeScript, Tailwind CSS, shadcn/ui, Supabase
+  Deployment target: Vercel
+  Language: 中文沟通，规格文档可使用英文标题 + 中文正文，保持一致性
+  Existing backend reference: docs/plans/2026-04-06-builder-digest-backend.md
+  Current backend direction:
+    - 以 follow-builders 公共 feed 作为 Phase 1 上游
+    - 统一归一化落库到 Supabase
+    - 异步生成摘要
+    - 对外提供统一内容查询 API
+  Product shape:
+    - 首页以 AI 内容流、日期分组、分类筛选、精选深度内容为核心
+    - 支持桌面、平板、移动端响应式体验
+    - 风格要求干净、专业、高端、阅读舒适，浅色为主并支持暗黑模式
+  Working principles:
+    - 先收敛 MVP，不提前做复杂标签、推荐、全文搜索
+    - 浏览器不直连内容表，前端通过服务端 API 获取内容
+    - 原文与原始 payload 是主事实，摘要是派生物
+
+rules:
+  proposal:
+    - Always include Background, Goals, Scope, Non-goals, Risks, and Open Questions.
+    - Keep architecture decisions explicit when frontend and backend boundaries are affected.
+  tasks:
+    - Break implementation into small verifiable increments.
+    - Separate frontend shell, public content APIs, ingest pipeline, and editorial features when possible.
+  spec:
+    - Prefer concrete user-visible behavior and acceptance criteria over implementation prose.
