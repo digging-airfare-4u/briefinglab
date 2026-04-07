@@ -71,8 +71,9 @@ const repository = createInMemoryPublicContentRepository([
     creatorName: "Latent Space",
     sourceName: "Latent Space",
     sourceUrl: "https://example.com",
-    transcriptText:
-      "Durable agents need checkpoints, retries, and structured handoffs between steps.",
+    transcriptText: `Speaker 1 | 00:00 - 00:20 Durable agents need checkpoints to survive long-running work.
+Speaker 2 | 06:45 - 07:18 Retries are not enough if you cannot inspect intermediate state.
+Speaker 1 | 13:20 - 13:58 Structured handoffs keep teams and agents aligned.`,
     summaries: [
       {
         locale: "en",
@@ -80,6 +81,25 @@ const repository = createInMemoryPublicContentRepository([
         bullets: ["Checkpoints", "Retries"],
       },
     ],
+    translations: [],
+  },
+  {
+    id: "tweet-link-1",
+    slug: "tweet-link-1",
+    kind: "tweet",
+    title: null,
+    url: "https://x.com/linkbuilder/status/1",
+    publishedAt: "2026-04-05T20:10:00.000Z",
+    language: "en",
+    rawPayload: {
+      text: "🚢 https://t.co/hdVkY6cZLq",
+    },
+    creatorName: "Link Builder",
+    creatorHandle: "linkbuilder",
+    sourceName: "X / Link Builder",
+    sourceUrl: "https://x.com/linkbuilder",
+    plainText: "🚢 https://t.co/hdVkY6cZLq",
+    summaries: [],
     translations: [],
   },
 ])
@@ -125,14 +145,41 @@ describe("public-content.service", () => {
     expect(detail?.source.url).toContain("https://")
   })
 
+  it("extracts podcast-specific detail metadata when transcript timestamps are available", async () => {
+    const detail = await service.getPublicContentDetail("podcast-1")
+    const podcastDetail = detail as
+      | (Record<string, unknown> & {
+          timeline?: Array<Record<string, string>>
+        })
+      | null
+
+    expect(podcastDetail).not.toBeNull()
+    expect(podcastDetail?.kind).toBe("podcast_episode")
+    expect(podcastDetail?.contentUrl).toBe("https://example.com/podcast-1")
+    expect(podcastDetail?.duration).toBe("13:58")
+    expect(podcastDetail?.timeline?.[0]).toMatchObject({
+      start: "00:00",
+      title: "Durable agents need checkpoints to survive long-running work.",
+    })
+  })
+
   it("builds a readable fallback title and decodes original text for untitled tweets", async () => {
     const detail = await service.getPublicContentDetail("tweet-1")
 
     expect(detail).not.toBeNull()
     expect(detail?.title).toContain("Codex now supports")
-    expect(detail?.title?.length).toBeGreaterThan(10)
+    expect(detail?.title?.length).toBeLessThan(
+      (detail?.body.original.text?.length ?? 0) + 1
+    )
     expect(detail?.body.original.text).toBe(
       "Codex now supports longer-running engineering tasks & deeper loops."
     )
+  })
+
+  it("falls back to a generic title when tweet text is only emoji and links", async () => {
+    const detail = await service.getPublicContentDetail("tweet-link-1")
+
+    expect(detail).not.toBeNull()
+    expect(detail?.title).toBe("Link Builder 的动态")
   })
 })

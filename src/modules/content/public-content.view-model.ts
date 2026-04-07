@@ -1,11 +1,21 @@
 export type ContentCategory = "news" | "article"
 export type CategoryFilter = "all" | ContentCategory
 export type CardType = "standard" | "digest"
+export type ContentKind = "tweet" | "podcast_episode" | "blog_post"
+
+export type ContentTimelineItem = {
+  start: string
+  end?: string
+  title: string
+  speaker?: string
+}
 
 export type ContentListItem = {
   id: string
   slug: string
+  kind?: ContentKind
   title: string
+  contentUrl?: string
   excerpt: string
   summary: string
   bullets: string[]
@@ -23,6 +33,8 @@ export type ContentListItem = {
 
 export type ContentDetailItem = ContentListItem & {
   sourceLanguage: string
+  duration?: string
+  timeline?: ContentTimelineItem[]
   originalTitle?: string
   translatedTitle?: string
   originalText?: string

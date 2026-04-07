@@ -14,10 +14,17 @@ import {
 } from "@/modules/content/public-content.view-model"
 
 function toContentListItem(item: PublicFeedItem): ContentListItem {
+  const legacyUrl =
+    "url" in (item as PublicFeedItem & { url?: string })
+      ? (item as PublicFeedItem & { url?: string }).url
+      : undefined
+
   return {
     id: item.id,
     slug: item.slug,
+    kind: item.kind,
     title: item.title ?? "",
+    contentUrl: item.contentUrl ?? legacyUrl ?? item.source.url,
     excerpt: item.excerpt,
     summary: item.summary.text,
     bullets: item.summary.bullets,
@@ -42,6 +49,8 @@ function toDetailPageData(item: PublicContentDetail) {
     item: {
       ...toContentListItem(item),
       sourceLanguage: item.body.original.locale,
+      duration: item.duration,
+      timeline: item.timeline,
       originalTitle: item.body.original.title ?? undefined,
       translatedTitle: translation?.title ?? undefined,
       originalText: item.body.original.text ?? undefined,

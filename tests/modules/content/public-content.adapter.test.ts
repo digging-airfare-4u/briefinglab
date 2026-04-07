@@ -183,6 +183,60 @@ vi.mock("@/modules/content/public-content.service", () => ({
             },
           ],
         }
+      : slug === "podcast-1"
+        ? {
+            id: "podcast-1",
+            slug: "podcast-1",
+            kind: "podcast_episode",
+            url: "https://example.com/podcast-1",
+            category: "article",
+            cardType: "digest",
+            title: "Building durable agents",
+            excerpt: "Durable agents need checkpoints and retries.",
+            summary: {
+              locale: "zh",
+              text: "这期播客讨论 durable agents 为什么需要 checkpoint 和 retry。",
+              bullets: ["Checkpoint", "Retry"],
+            },
+            summaries: {
+              zh: {
+                locale: "zh",
+                summary: "这期播客讨论 durable agents 为什么需要 checkpoint 和 retry。",
+                bullets: ["Checkpoint", "Retry"],
+              },
+            },
+            body: {
+              original: {
+                locale: "en",
+                title: "Building durable agents",
+                text: "Speaker 1 | 00:00 - 00:20 Durable agents need checkpoints.",
+              },
+              translation: {
+                locale: "zh",
+                title: "构建可持续执行的 agents",
+                text: "主持人 | 00:00 - 00:20 Durable agents 需要 checkpoint。",
+              },
+            },
+            creator: {
+              name: "Latent Space",
+              handle: "latentspace",
+            },
+            source: {
+              name: "Latent Space",
+              url: "https://example.com",
+            },
+            publishedAt: "2026-04-05T21:10:00.000Z",
+            readTime: "2 分钟摘要",
+            badges: ["播客", "中文摘要"],
+            duration: "1:06:37",
+            timeline: [
+              {
+                start: "00:00",
+                title: "Durable agents need checkpoints.",
+              },
+            ],
+            relatedItems: [],
+          }
       : null
   ),
 }))
@@ -223,6 +277,23 @@ describe("public-content adapter", () => {
     expect(detail?.item.translatedText).toContain("执行回路")
     expect(detail?.item.englishSummary).toContain("Execution loops")
     expect(detail?.relatedItems.length).toBeGreaterThan(0)
+  })
+
+  it("maps podcast-specific detail fields when present", async () => {
+    const detail = await getContentDetailPageData("podcast-1")
+    const item = detail?.item as
+      | (Record<string, unknown> & {
+          timeline?: Array<Record<string, string>>
+        })
+      | undefined
+
+    expect(item?.kind).toBe("podcast_episode")
+    expect(item?.contentUrl).toBe("https://example.com/podcast-1")
+    expect(item?.duration).toBe("1:06:37")
+    expect(item?.timeline?.[0]).toMatchObject({
+      start: "00:00",
+      title: "Durable agents need checkpoints.",
+    })
   })
 
   it("keeps app and site UI away from mock-content imports", () => {

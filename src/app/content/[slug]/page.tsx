@@ -17,5 +17,5 @@ export default async function ContentDetailPage({
     notFound()
   }
 
-  return <DetailPage item={data.item} />
+  return <DetailPage item={data.item} relatedItems={data.relatedItems} />
 }

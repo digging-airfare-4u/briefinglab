@@ -26,13 +26,16 @@ export type PublicSummaryCollection = Partial<
 export type FeedCategory = "news" | "article"
 export type CategoryFilter = "all" | FeedCategory
 export type CardType = "standard" | "digest"
+export type PublicContentKind = PublicContentRow["kind"]
 
 export type PublicFeedItem = {
   id: string
   slug: string
+  kind: PublicContentKind
   category: FeedCategory
   cardType: CardType
   title: string | null
+  contentUrl: string
   excerpt: string
   summary: PublicSummary
   creator: {
@@ -75,8 +78,17 @@ export type PublicContentBody = {
   text: string | null
 }
 
+export type PublicContentTimelineItem = {
+  start: string
+  end?: string
+  title: string
+  speaker?: string
+}
+
 export type PublicContentDetail = PublicFeedItem & {
   summaries: PublicSummaryCollection
+  duration?: string
+  timeline: PublicContentTimelineItem[]
   body: {
     original: PublicContentBody
     translation: PublicContentBody | null
@@ -98,6 +110,7 @@ type CursorPayload = {
 
 const DEFAULT_LIMIT = 10
 const MAX_LIMIT = 50
+const GENERATED_TITLE_MAX_LENGTH = 56
 let cachedService: ReturnType<typeof createPublicContentService> | null = null
 
 function sortByPublishedAtDesc<T extends { publishedAt: string; slug: string }>(items: T[]) {
@@ -144,6 +157,38 @@ function decodeHtmlEntities(value: string) {
 
 function cleanDecodedText(value: string) {
   return cleanText(decodeHtmlEntities(value))
+}
+
+function stripUrls(value: string) {
+  return value.replace(/https?:\/\/\S+|www\.\S+/gi, " ")
+}
+
+function extractFirstSentence(value: string) {
+  return value.split(/(?<=[.!?。！？])\s+|\n+/)[0] ?? value
+}
+
+function normalizeGeneratedTitle(value: string) {
+  const sentence = extractFirstSentence(cleanDecodedText(stripUrls(value)))
+
+  return cleanText(
+    sentence
+      .replace(/^[^A-Za-z0-9\u3400-\u9FFF]+/g, "")
+      .replace(/\s*[-:：|｜]+\s*$/g, "")
+  )
+}
+
+function isMeaningfulGeneratedTitle(value: string) {
+  if (!value || !/[A-Za-z0-9\u3400-\u9FFF]/.test(value)) {
+    return false
+  }
+
+  const normalized = value.toLowerCase().replace(/[^a-z0-9\u3400-\u9fff]/g, "")
+
+  if (!normalized) {
+    return false
+  }
+
+  return !new Set(["link", "links", "url", "链接"]).has(normalized)
 }
 
 function firstNonEmptyString(candidates: Array<string | null | undefined>) {
@@ -198,6 +243,175 @@ function getDisplayText(candidates: Array<string | null | undefined>) {
   return value ? decodeHtmlEntities(value).trim() : ""
 }
 
+function timestampToSeconds(value: string) {
+  const parts = value.split(":").map((segment) => Number(segment))
+
+  if (parts.some((segment) => Number.isNaN(segment))) {
+    return null
+  }
+
+  if (parts.length === 2) {
+    const [minutes, seconds] = parts
+    return minutes * 60 + seconds
+  }
+
+  if (parts.length === 3) {
+    const [hours, minutes, seconds] = parts
+    return hours * 3600 + minutes * 60 + seconds
+  }
+
+  return null
+}
+
+function formatTimestampFromSeconds(totalSeconds: number) {
+  const hours = Math.floor(totalSeconds / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  if (hours > 0) {
+    return `${hours}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+  }
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+}
+
+type TranscriptSegment = {
+  start: string
+  end?: string
+  startSeconds: number
+  endSeconds?: number
+  speaker?: string
+  title: string
+}
+
+function extractTranscriptSegments(text: string): TranscriptSegment[] {
+  const lines = decodeHtmlEntities(text)
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const segments: TranscriptSegment[] = []
+  const timelinePattern =
+    /^(?:([^|]+?)\s*\|\s*)?(\d{1,2}:\d{2}(?::\d{2})?)\s*-\s*(\d{1,2}:\d{2}(?::\d{2})?)(?:\s+(.*))?$/
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = lines[index]?.match(timelinePattern)
+
+    if (!match) {
+      continue
+    }
+
+    const [, speakerRaw, start, end, bodyRaw] = match
+    const startSeconds = timestampToSeconds(start)
+    const endSeconds = timestampToSeconds(end)
+
+    if (startSeconds === null) {
+      continue
+    }
+
+    let body = cleanDecodedText(bodyRaw ?? "")
+
+    if (!body) {
+      const nextLine = lines[index + 1]
+      if (nextLine && !timelinePattern.test(nextLine)) {
+        body = cleanDecodedText(nextLine)
+        index += 1
+      }
+    }
+
+    const title = truncate(
+      cleanText(
+        extractFirstSentence(body || `${cleanText(speakerRaw ?? "")} 对话片段`)
+      ),
+      88
+    )
+
+    if (!title) {
+      continue
+    }
+
+    segments.push({
+      start,
+      end,
+      startSeconds,
+      endSeconds: endSeconds ?? undefined,
+      speaker: cleanText(speakerRaw ?? "") || undefined,
+      title,
+    })
+  }
+
+  return segments
+}
+
+function buildTimeline(row: PublicContentRow): PublicContentTimelineItem[] {
+  if (row.kind !== "podcast_episode") {
+    return []
+  }
+
+  const transcript = firstNonEmptyString([row.transcriptText, row.plainText]) ?? ""
+  const segments = extractTranscriptSegments(transcript)
+
+  if (segments.length === 0) {
+    return []
+  }
+
+  if (segments.length <= 6) {
+    return segments.map(({ start, end, title, speaker }) => ({
+      start,
+      end,
+      title,
+      speaker,
+    }))
+  }
+
+  const lastSeconds =
+    segments.at(-1)?.endSeconds ?? segments.at(-1)?.startSeconds ?? 0
+  const gap = Math.max(6 * 60, Math.floor(lastSeconds / 5))
+  const selected: TranscriptSegment[] = [segments[0]]
+  let lastSelectedSeconds = segments[0]?.startSeconds ?? 0
+
+  for (const segment of segments.slice(1, -1)) {
+    if (segment.startSeconds - lastSelectedSeconds < gap) {
+      continue
+    }
+
+    selected.push(segment)
+    lastSelectedSeconds = segment.startSeconds
+
+    if (selected.length >= 5) {
+      break
+    }
+  }
+
+  const lastSegment = segments.at(-1)
+  if (
+    lastSegment &&
+    selected[selected.length - 1]?.start !== lastSegment.start &&
+    selected.length < 6
+  ) {
+    selected.push(lastSegment)
+  }
+
+  return selected.map(({ start, end, title, speaker }) => ({
+    start,
+    end,
+    title,
+    speaker,
+  }))
+}
+
+function buildDuration(row: PublicContentRow) {
+  if (row.kind !== "podcast_episode") {
+    return undefined
+  }
+
+  const transcript = firstNonEmptyString([row.transcriptText, row.plainText]) ?? ""
+  const segments = extractTranscriptSegments(transcript)
+  const lastSeconds =
+    segments.at(-1)?.endSeconds ?? segments.at(-1)?.startSeconds ?? null
+
+  return lastSeconds === null ? undefined : formatTimestampFromSeconds(lastSeconds)
+}
+
 function getSourceText(row: PublicContentRow) {
   return cleanDecodedText(
     firstNonEmptyString([
@@ -214,24 +428,39 @@ function getSourceText(row: PublicContentRow) {
 
 function buildTitleFallback(row: PublicContentRow, summary: PublicSummary) {
   const translation = getPreferredTranslation(row)
-  const fallbackText = cleanDecodedText(
-    firstNonEmptyString([
-      translation?.title,
-      row.title,
-      translation?.plainText,
-      translation?.transcriptText,
-      row.plainText,
-      row.transcriptText,
-      typeof row.rawPayload.text === "string" ? row.rawPayload.text : undefined,
-      typeof row.rawPayload.description === "string"
-        ? row.rawPayload.description
-        : undefined,
-      summary.text,
-      row.sourceName,
-    ]) ?? row.sourceName
-  )
+  const titleCandidates = [
+    translation?.plainText,
+    translation?.transcriptText,
+    row.plainText,
+    row.transcriptText,
+    typeof row.rawPayload.text === "string" ? row.rawPayload.text : undefined,
+    typeof row.rawPayload.description === "string"
+      ? row.rawPayload.description
+      : undefined,
+    summary.text,
+  ]
 
-  return truncate(fallbackText, 72)
+  for (const candidate of titleCandidates) {
+    if (!candidate) {
+      continue
+    }
+
+    const normalized = normalizeGeneratedTitle(candidate)
+
+    if (isMeaningfulGeneratedTitle(normalized)) {
+      return truncate(normalized, GENERATED_TITLE_MAX_LENGTH)
+    }
+  }
+
+  if (row.kind === "tweet") {
+    return `${row.creatorName} 的动态`
+  }
+
+  if (row.kind === "podcast_episode") {
+    return `${row.creatorName} 的播客分享`
+  }
+
+  return `${row.creatorName} 的文章分享`
 }
 
 function getPrimarySummary(row: PublicContentRow): PublicSummary {
@@ -338,9 +567,11 @@ function toPublicFeedItem(row: PublicContentRow): PublicFeedItem {
   return {
     id: row.id,
     slug: row.slug,
+    kind: row.kind,
     category,
     cardType: category === "article" ? "digest" : "standard",
     title,
+    contentUrl: row.url,
     excerpt: buildExcerpt(row, summary),
     summary,
     creator: {
@@ -585,6 +816,8 @@ export function createPublicContentService(repository: PublicContentRepository) 
             ? { [primarySummary.locale]: toSummaryVariant(primarySummary) }
             : {}),
         },
+        duration: buildDuration(row),
+        timeline: buildTimeline(row),
         body: buildDetailBody(row),
         relatedItems: buildRelatedItems(allRows, row),
       }
