@@ -16,6 +16,14 @@
 2. 原文是主事实，摘要只是派生物。抓取到的 `raw_payload`、`raw_text`、`transcript_text` 都必须落库。
 3. 先跑通一条稳定的数据链路，再追求“全自建抓取”。X 的官方 API、反爬、成本和 ToS 复杂度都不低。
 
+## 前台分类先收敛
+
+当前阶段前台不再区分“研究”和“产品”，统一只保留 `全部 / 文章 / 动态` 三个入口，避免分类稀疏。
+
+- `tweet`、短更新、发布类内容映射到 `news`
+- `podcast_episode`、`blog_post`、日报摘要、长文解读映射到 `article`
+- 未来如果真实供给稳定，再考虑把“研究”或“产品”拆出来
+
 ## 从 follow-builders 里直接借鉴什么
 
 1. `config/default-sources.json` 直接作为第一版源清单种子数据。
@@ -1151,4 +1159,3 @@ git commit -m "chore: harden internal api and ingest logging"
 3. 增加 `creator` 维度统计页
 4. 增加多语言摘要缓存
 5. 增加站内全文检索
-

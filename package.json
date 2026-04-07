@@ -1,18 +1,29 @@
 {
-  "name": "app-tmp",
+  "name": "caiji",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "vitest run",
+    "seed:sources": "tsx src/jobs/seed-sources.ts",
+    "ingest:follow-builders:dry-run": "tsx src/jobs/run-follow-builders-ingest.ts --dry-run",
+    "ingest:follow-builders": "tsx src/jobs/run-follow-builders-ingest.ts",
+    "ingest:direct": "tsx src/jobs/run-direct-ingest.ts",
+    "summaries:run": "tsx src/jobs/run-summary-jobs.ts"
   },
   "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.7",
+    "@fontsource/manrope": "^5.2.8",
+    "@fontsource/space-grotesk": "^5.2.10",
+    "@supabase/supabase-js": "^2.101.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "next": "16.2.2",
+    "next-themes": "^0.4.6",
     "radix-ui": "^1.4.3",
     "react": "19.2.4",
     "react-dom": "19.2.4",
@@ -28,6 +39,8 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.21.0",
+    "typescript": "^5",
+    "vitest": "^4.1.2"
   }
 }

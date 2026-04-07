@@ -1,0 +1,2 @@
+-- Seed data intentionally starts empty.
+-- Runtime ingest will upsert sources, creators, content items, and metrics.

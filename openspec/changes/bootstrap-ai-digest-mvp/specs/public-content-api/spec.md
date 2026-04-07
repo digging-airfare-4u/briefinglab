@@ -7,6 +7,7 @@
 - **WHEN** 前端请求内容 feed，并附带分类、分页或来源参数
 - **THEN** API 必须返回可直接用于渲染列表的内容集合
 - **THEN** 每条内容必须包含 slug、分类、展示摘要、来源、创作者和发布时间等必要字段
+- **THEN** 当前阶段分类值必须收敛为 `article` 或 `news`
 
 #### Scenario: Cursor pagination
 - **WHEN** 前端请求下一页内容

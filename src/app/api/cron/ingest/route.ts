@@ -1,5 +1,5 @@
 import { runFollowBuildersIngestJob } from "@/modules/ingest/follow-builders.job"
-import { runSummaryJob } from "@/modules/summaries/summary.job"
+import { runSummaryJobs } from "@/modules/summaries/summary.job"
 
 export async function GET(request: Request) {
   // Vercel Cron adds a special header for verification
@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   try {
     const results = await Promise.allSettled([
       runFollowBuildersIngestJob({ dryRun: false }),
-      runSummaryJob(),
+      runSummaryJobs(),
     ])
 
     const ingestResult = results[0]
