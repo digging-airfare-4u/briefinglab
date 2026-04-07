@@ -31,8 +31,8 @@ export function StandardContentCard({ item }: { item: ContentListItem }) {
   const Icon = meta.icon
 
   return (
-    <Card className="gap-4 border-border/60 bg-card/92 shadow-none transition-colors hover:border-primary/25">
-      <CardHeader className="space-y-2">
+    <Card className="gap-0 bg-transparent shadow-none transition-colors hover:bg-card/50">
+      <CardHeader className="gap-2 px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Badge className="rounded-full bg-primary/8 text-primary hover:bg-primary/8">
             <Icon className="size-3.5" />
@@ -49,7 +49,7 @@ export function StandardContentCard({ item }: { item: ContentListItem }) {
           {item.excerpt}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="items-center justify-between gap-4 border-t border-border/60 bg-transparent">
+      <CardFooter className="items-center justify-between gap-4 border-t border-border/40 bg-transparent px-4 pb-4 pt-3">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-foreground">
             {item.creatorName}
@@ -71,8 +71,8 @@ export function StandardContentCard({ item }: { item: ContentListItem }) {
 
 export function DigestContentCard({ item }: { item: ContentListItem }) {
   return (
-    <Card className="gap-4 border-primary/18 bg-primary/4 shadow-none transition-colors hover:border-primary/28">
-      <CardHeader className="space-y-2">
+    <Card className="gap-0 overflow-hidden border-l-4 border-primary bg-transparent shadow-none transition-colors hover:border-l-primary/80">
+      <CardHeader className="gap-2 px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Badge className="rounded-full bg-primary text-primary-foreground hover:bg-primary">
             <Sparkles className="size-3.5" />
@@ -85,7 +85,7 @@ export function DigestContentCard({ item }: { item: ContentListItem }) {
         </CardTitle>
         <CardDescription className="text-sm leading-7">{item.summary}</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 px-4 py-4">
         <ul className="space-y-2.5">
           {item.bullets.slice(0, 2).map((bullet) => (
             <li key={bullet} className="flex gap-3 text-sm leading-7 text-foreground/92">
@@ -95,7 +95,7 @@ export function DigestContentCard({ item }: { item: ContentListItem }) {
           ))}
         </ul>
       </CardContent>
-      <CardFooter className="items-center justify-between gap-4 border-t border-primary/12 bg-transparent">
+      <CardFooter className="items-center justify-between gap-4 border-t border-border/40 bg-transparent px-4 pb-4 pt-3">
         <div className="min-w-0">
           <p className="text-sm font-medium text-foreground">{item.sourceName}</p>
           <p className="font-mono text-xs text-muted-foreground">
