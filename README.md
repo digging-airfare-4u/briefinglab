@@ -1,4 +1,4 @@
-# Caiji · 采集
+# Briefinglab · 采集
 
 > A clean, summary-first AI news aggregator — surfacing what builders are building, thinking, and shipping.
 
@@ -8,9 +8,9 @@
 
 ## English
 
-### What is Caiji?
+### What is Briefinglab?
 
-Caiji is an AI-native content aggregation platform that surfaces high-signal posts, podcasts, and articles from influential builders. It normalizes content from diverse sources into a unified feed, generates bilingual (EN/ZH) summaries, and delivers a distraction-free reading experience.
+Briefinglab is an AI-native content aggregation platform that surfaces high-signal posts, podcasts, and articles from influential builders. It normalizes content from diverse sources into a unified feed, generates bilingual (EN/ZH) summaries, and delivers a distraction-free reading experience.
 
 ### Tech Stack
 
@@ -43,7 +43,7 @@ Caiji is an AI-native content aggregation platform that surfaces high-signal pos
 #### 1. Clone & Install
 
 ```bash
-git clone https://github.com/woshicjs-projects/caiji.git
+git clone https://github.com/digging-airfare-4u/briefinglab.git
 cd caiji
 npm install
 ```
@@ -119,7 +119,7 @@ npm run summaries:run
 
 #### Vercel + Supabase
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/woshicjs-projects/caiji)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/digging-airfare-4u/briefinglab)
 
 [![Deploy to Supabase](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)](https://supabase.com)
 
@@ -198,9 +198,9 @@ supabase/
 
 ## 中文
 
-### Caiji 是什么？
+### Briefinglab 是什么？
 
-Caiji（采集）是一个 AI 优先的内容聚合平台，汇聚 Builder 群体的高价值推文、播客和博客文章。系统自动从多个来源抓取内容、生成中英文摘要，并以极简阅读体验呈现。
+Briefinglab（采集）是一个 AI 优先的内容聚合平台，汇聚 Builder 群体的高价值推文、播客和博客文章。系统自动从多个来源抓取内容、生成中英文摘要，并以极简阅读体验呈现。
 
 ### 技术栈
 
@@ -233,7 +233,7 @@ Caiji（采集）是一个 AI 优先的内容聚合平台，汇聚 Builder 群�
 #### 1. 克隆安装
 
 ```bash
-git clone https://github.com/woshicjs-projects/caiji.git
+git clone https://github.com/digging-airfare-4u/briefinglab.git
 cd caiji
 npm install
 ```
@@ -309,7 +309,7 @@ npm run summaries:run
 
 #### Vercel + Supabase
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/woshicjs-projects/caiji)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/digging-airfare-4u/briefinglab)
 
 [![Deploy to Supabase](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs)](https://supabase.com)
 
