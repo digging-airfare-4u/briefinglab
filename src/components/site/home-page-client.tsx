@@ -69,6 +69,10 @@ export function HomePageClient({
     () => (sources.length > 1 ? [...sources, ...sources] : sources),
     [sources]
   )
+  const railDurationSeconds = React.useMemo(
+    () => Math.max(72, sources.length * 14),
+    [sources.length]
+  )
 
   return (
     <div className="min-h-screen">
@@ -109,6 +113,12 @@ export function HomePageClient({
                   <div
                     className="source-rail-track py-0.5 motion-reduce:animate-none"
                     data-static={sources.length <= 1 ? "true" : "false"}
+                    data-expanded={showAllSources ? "true" : "false"}
+                    style={
+                      {
+                        "--source-rail-duration": `${railDurationSeconds}s`,
+                      } as React.CSSProperties
+                    }
                   >
                     {marqueeSources.map((source, index) => (
                       <HoverCard key={`${source.id}-${index}`}>

@@ -148,6 +148,7 @@ describe("HomePageClient", () => {
     expect(html).toContain("重点跟踪模型、训练与 AI 工程实践的一手动态。")
     expect(html).toContain('href="https://x.com/karpathy"')
     expect(html).toContain("source-rail-track")
+    expect(html).toContain("--source-rail-duration:72s")
     expect(html).toContain("w-[184px]")
     expect(html).toContain("w-64")
     expect(html).toContain("展开全部来源")

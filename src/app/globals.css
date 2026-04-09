@@ -203,19 +203,23 @@
 
   .source-rail-track {
     --source-rail-gap: 0.625rem;
+    --source-rail-duration: 72s;
     display: flex;
     width: max-content;
     align-items: center;
     gap: var(--source-rail-gap);
-    animation: source-rail-scroll 36s linear infinite;
+    animation: source-rail-scroll var(--source-rail-duration) linear infinite;
     will-change: transform;
+    transform: translate3d(0, 0, 0);
+    backface-visibility: hidden;
   }
 
   .source-rail:hover .source-rail-track {
     animation-play-state: paused;
   }
 
-  .source-rail-track[data-static="true"] {
+  .source-rail-track[data-static="true"],
+  .source-rail-track[data-expanded="true"] {
     width: 100%;
     animation: none;
   }
@@ -223,10 +227,10 @@
 
 @keyframes source-rail-scroll {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
 
   to {
-    transform: translateX(calc(-50% - var(--source-rail-gap) / 2));
+    transform: translate3d(calc(-50% - var(--source-rail-gap) / 2), 0, 0);
   }
 }
