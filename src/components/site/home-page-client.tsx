@@ -55,6 +55,7 @@ export function HomePageClient({
   sources?: SourceDirectoryItem[]
 }) {
   const [activeCategory, setActiveCategory] = React.useState<CategoryFilter>("all")
+  const [showAllSources, setShowAllSources] = React.useState(false)
 
   const filteredItems = React.useMemo(
     () => filterContentItems(initialItems, activeCategory),
@@ -202,8 +203,63 @@ export function HomePageClient({
                     ))}
                   </div>
                 </div>
+
+                {sources.length > 1 ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="shrink-0 rounded-full border-white/60 bg-white/68 px-3 text-[11px] text-foreground/88 hover:bg-white/82 dark:bg-white/8"
+                    onClick={() => setShowAllSources((current) => !current)}
+                  >
+                    {showAllSources ? "收起来源" : "展开全部来源"}
+                  </Button>
+                ) : null}
               </div>
             </div>
+
+            {showAllSources ? (
+              <div className="mt-3 grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                {sources.map((source) => (
+                  <a
+                    key={`expanded-${source.id}`}
+                    href={source.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-3 rounded-[1.15rem] border border-white/55 bg-white/68 px-3 py-3 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.18)] transition-colors hover:border-primary/25 hover:bg-white/84 dark:bg-white/8"
+                  >
+                    <Avatar className="shadow-sm">
+                      {source.avatarUrl ? (
+                        <AvatarImage
+                          src={source.avatarUrl}
+                          alt={`${source.name} 头像`}
+                        />
+                      ) : null}
+                      <AvatarFallback>{getSourceInitials(source.name)}</AvatarFallback>
+                    </Avatar>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {source.name}
+                        </p>
+                        <Badge
+                          variant="outline"
+                          className="rounded-full border-white/55 bg-background/78 text-[10px] text-muted-foreground"
+                        >
+                          {source.typeLabel}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
+                        {source.handle ? `@${source.handle}` : source.href}
+                      </p>
+                    </div>
+
+                    <ArrowUpRight className="size-4 shrink-0 text-muted-foreground" />
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </section>
         ) : null}
 

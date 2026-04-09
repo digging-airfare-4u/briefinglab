@@ -129,12 +129,19 @@ describe("HomePageClient", () => {
             avatarUrl: "https://unavatar.io/x/karpathy",
             href: "https://x.com/karpathy",
           },
+          {
+            id: "podcast-every",
+            name: "AI & I by Every",
+            typeLabel: "播客",
+            description: "关注 AI 产品、创作者与团队的访谈内容。",
+            href: "https://every.to/ai-and-i",
+          },
         ],
       })
     )
 
     expect(html).toContain("数据源")
-    expect(html).toContain("1 source")
+    expect(html).toContain("2 sources")
     expect(html).toContain("Andrej Karpathy")
     expect(html).toContain("@karpathy")
     expect(html).toContain("查看主页")
@@ -143,6 +150,7 @@ describe("HomePageClient", () => {
     expect(html).toContain("source-rail-track")
     expect(html).toContain("w-[184px]")
     expect(html).toContain("w-64")
+    expect(html).toContain("展开全部来源")
     expect(html).not.toContain("我正在追踪这些公开来源")
     expect(html.indexOf("数据源")).toBeLessThan(
       html.indexOf("Codex now supports longer-running engineering tasks.")

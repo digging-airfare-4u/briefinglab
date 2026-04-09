@@ -274,13 +274,18 @@ describe("public-content adapter", () => {
     expect(data.items[0]).toHaveProperty("sourceName")
     expect(data.items[0]).toHaveProperty("creatorName")
     expect(data.sources).toBeDefined()
-    expect(data.sources?.find((item) => item.id === "x-karpathy")).toMatchObject({
-      id: "x-karpathy",
+    expect(data.sources).toHaveLength(2)
+    expect(data.sources?.find((item) => item.handle === "karpathy")).toMatchObject({
       name: "Andrej Karpathy",
       typeLabel: "X 账号",
       handle: "karpathy",
       description: expect.any(String),
       avatarUrl: expect.stringContaining("karpathy"),
+    })
+    expect(data.sources?.find((item) => item.name === "Latent Space")).toMatchObject({
+      name: "Latent Space",
+      typeLabel: "播客",
+      description: expect.any(String),
     })
   })
 

@@ -13,6 +13,7 @@ import {
   type ContentListItem,
 } from "@/modules/content/public-content.view-model"
 import {
+  listObservedSourceDirectoryItems,
   listSourceDirectoryItems,
   type SourceDirectoryItem,
 } from "@/modules/sources/source-directory"
@@ -72,11 +73,19 @@ export async function getHomePageData(): Promise<{
   sources: SourceDirectoryItem[]
 }> {
   const items = (await listPublicFeedItems()).map(toContentListItem)
+  const sources = listObservedSourceDirectoryItems(
+    items.map((item) => ({
+      sourceName: item.sourceName,
+      sourceUrl: item.sourceUrl,
+      creatorHandle: item.creatorHandle,
+      kind: item.kind,
+    }))
+  )
 
   return {
     items,
     categories: buildCategoryOptions(items),
-    sources: listSourceDirectoryItems(),
+    sources: sources.length > 0 ? sources : listSourceDirectoryItems(),
   }
 }
 
