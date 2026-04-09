@@ -90,13 +90,13 @@ export function HomePageClient({
 
         {sources.length > 0 ? (
           <section className="mb-8">
-            <div className="source-rail overflow-hidden rounded-[1.8rem] border border-white/55 bg-background/58 px-3 py-2.5 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.22)] supports-backdrop-filter:backdrop-blur-xl sm:px-3.5">
-              <div className="flex items-center gap-3">
-                <div className="shrink-0 rounded-[1.2rem] border border-white/55 bg-white/72 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:bg-white/8">
+            <div className="source-rail overflow-hidden rounded-[1.7rem] border border-white/55 bg-background/58 px-3 py-2 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.22)] supports-backdrop-filter:backdrop-blur-xl sm:px-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="shrink-0 rounded-[1.1rem] border border-white/55 bg-white/72 px-3 py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:bg-white/8">
                   <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
                     数据源
                   </p>
-                  <p className="mt-1 text-sm font-semibold text-foreground">
+                  <p className="mt-0.5 text-sm font-semibold text-foreground">
                     {formatSourceCount(sources.length)}
                   </p>
                 </div>
@@ -116,7 +116,7 @@ export function HomePageClient({
                             href={source.href}
                             target="_blank"
                             rel="noreferrer"
-                            className="group/source flex h-14 w-[198px] shrink-0 items-center gap-3 rounded-[1.15rem] border border-white/60 bg-white/72 px-3 py-2 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.26)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-white/88 dark:bg-white/8 dark:hover:bg-white/12"
+                            className="group/source flex h-13.5 w-[184px] shrink-0 items-center gap-2.5 rounded-[1rem] border border-white/60 bg-white/72 px-2.5 py-2 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.26)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-white/88 dark:bg-white/8 dark:hover:bg-white/12"
                           >
                             <Avatar className="shadow-sm">
                               {source.avatarUrl ? (
@@ -131,7 +131,7 @@ export function HomePageClient({
                             </Avatar>
 
                             <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1.5">
                                 <p className="truncate text-sm font-semibold text-foreground">
                                   {source.name}
                                 </p>
@@ -151,7 +151,7 @@ export function HomePageClient({
 
                         <HoverCardContent
                           align="start"
-                          className="rounded-[1.35rem] border-white/60 bg-background/88"
+                          className="w-64 rounded-[1.2rem] border-white/60 bg-background/88"
                         >
                           <div className="flex items-start gap-3">
                             <Avatar size="lg" className="shadow-sm">
@@ -183,13 +183,13 @@ export function HomePageClient({
                                   @{source.handle}
                                 </p>
                               ) : null}
-                              <p className="mt-3 leading-6 text-muted-foreground">
+                              <p className="mt-2.5 leading-6 text-muted-foreground">
                                 {source.description}
                               </p>
                             </div>
                           </div>
 
-                          <div className="mt-4">
+                          <div className="mt-3.5">
                             <Button asChild size="sm" variant="outline">
                               <a href={source.href} target="_blank" rel="noreferrer">
                                 查看主页

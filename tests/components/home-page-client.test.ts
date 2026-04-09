@@ -67,7 +67,13 @@ vi.mock("@/components/ui/hover-card", () => ({
     ...props
   }: {
     children: ReactNode
-  }) => createElement("div", props, children),
+    asChild?: boolean
+  }) => {
+    const nextProps = { ...props }
+    delete (nextProps as { asChild?: boolean }).asChild
+
+    return createElement("div", nextProps, children)
+  },
   HoverCardContent: ({
     children,
     ...props
@@ -134,6 +140,9 @@ describe("HomePageClient", () => {
     expect(html).toContain("查看主页")
     expect(html).toContain("重点跟踪模型、训练与 AI 工程实践的一手动态。")
     expect(html).toContain('href="https://x.com/karpathy"')
+    expect(html).toContain("source-rail-track")
+    expect(html).toContain("w-[184px]")
+    expect(html).toContain("w-64")
     expect(html).not.toContain("我正在追踪这些公开来源")
     expect(html.indexOf("数据源")).toBeLessThan(
       html.indexOf("Codex now supports longer-running engineering tasks.")

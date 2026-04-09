@@ -30,18 +30,20 @@ function HoverCardTrigger({
 
 function HoverCardContent({
   className,
+  side = "top",
   align = "center",
-  sideOffset = 12,
+  sideOffset = 10,
   ...props
 }: React.ComponentProps<typeof HoverCardPrimitive.Content>) {
   return (
     <HoverCardPrimitive.Portal>
       <HoverCardPrimitive.Content
         data-slot="hover-card-content"
+        side={side}
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          "z-50 w-72 origin-(--radix-hover-card-content-transform-origin) rounded-[1.35rem] border border-white/55 bg-background/92 p-4 text-sm text-foreground shadow-[0_24px_60px_-30px_rgba(15,23,42,0.32)] backdrop-blur-xl data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
+          "z-50 w-64 origin-(--radix-hover-card-content-transform-origin) rounded-[1.2rem] border border-white/55 bg-background/92 p-3.5 text-sm text-foreground shadow-[0_20px_48px_-28px_rgba(15,23,42,0.28)] backdrop-blur-xl data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
           className
         )}
         {...props}
