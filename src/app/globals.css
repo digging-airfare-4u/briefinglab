@@ -196,4 +196,37 @@
     transform: translateY(0) scale(1);
     filter: blur(0);
   }
+
+  .source-rail {
+    position: relative;
+  }
+
+  .source-rail-track {
+    --source-rail-gap: 0.75rem;
+    display: flex;
+    width: max-content;
+    align-items: center;
+    gap: var(--source-rail-gap);
+    animation: source-rail-scroll 28s linear infinite;
+    will-change: transform;
+  }
+
+  .source-rail:hover .source-rail-track {
+    animation-play-state: paused;
+  }
+
+  .source-rail-track[data-static="true"] {
+    width: 100%;
+    animation: none;
+  }
+}
+
+@keyframes source-rail-scroll {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(-50% - var(--source-rail-gap) / 2));
+  }
 }

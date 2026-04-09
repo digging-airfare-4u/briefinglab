@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ArrowUpRight } from "lucide-react"
 
 import { CategorySidebar } from "@/components/site/category-sidebar"
 import { DateGroupHeading } from "@/components/site/date-group-heading"
@@ -11,20 +12,47 @@ import {
 import { RevealOnScroll } from "@/components/site/reveal-on-scroll"
 import { SiteHeader } from "@/components/site/site-header"
 import {
+  Avatar,
+  AvatarFallback,
+  AvatarImage,
+} from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
+import {
   filterContentItems,
   groupContentItems,
   type CategoryFilter,
   type CategoryOption,
   type ContentListItem,
 } from "@/modules/content/public-content.view-model"
+import { type SourceDirectoryItem } from "@/modules/sources/source-directory"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+
+function getSourceInitials(name: string) {
+  return name
+    .split(/\s+/)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("")
+    .slice(0, 2)
+}
+
+function formatSourceCount(count: number) {
+  return `${count} ${count === 1 ? "source" : "sources"}`
+}
 
 export function HomePageClient({
   initialItems,
   categories,
+  sources = [],
 }: {
   initialItems: ContentListItem[]
   categories: CategoryOption[]
+  sources?: SourceDirectoryItem[]
 }) {
   const [activeCategory, setActiveCategory] = React.useState<CategoryFilter>("all")
 
@@ -35,6 +63,10 @@ export function HomePageClient({
   const dateGroups = React.useMemo(
     () => groupContentItems(filteredItems),
     [filteredItems]
+  )
+  const marqueeSources = React.useMemo(
+    () => (sources.length > 1 ? [...sources, ...sources] : sources),
+    [sources]
   )
 
   return (
@@ -55,6 +87,125 @@ export function HomePageClient({
             按日期整理的文章与动态。
           </p>
         </section>
+
+        {sources.length > 0 ? (
+          <section className="mb-8">
+            <div className="source-rail overflow-hidden rounded-[1.8rem] border border-white/55 bg-background/58 px-3 py-2.5 shadow-[0_12px_40px_-24px_rgba(15,23,42,0.22)] supports-backdrop-filter:backdrop-blur-xl sm:px-3.5">
+              <div className="flex items-center gap-3">
+                <div className="shrink-0 rounded-[1.2rem] border border-white/55 bg-white/72 px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:bg-white/8">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+                    数据源
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-foreground">
+                    {formatSourceCount(sources.length)}
+                  </p>
+                </div>
+
+                <div className="relative min-w-0 flex-1 overflow-hidden">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-8 bg-linear-to-r from-background/95 to-transparent" />
+                  <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-8 bg-linear-to-l from-background/95 to-transparent" />
+
+                  <div
+                    className="source-rail-track py-0.5 motion-reduce:animate-none"
+                    data-static={sources.length <= 1 ? "true" : "false"}
+                  >
+                    {marqueeSources.map((source, index) => (
+                      <HoverCard key={`${source.id}-${index}`}>
+                        <HoverCardTrigger asChild>
+                          <a
+                            href={source.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="group/source flex h-14 w-[198px] shrink-0 items-center gap-3 rounded-[1.15rem] border border-white/60 bg-white/72 px-3 py-2 shadow-[0_8px_24px_-18px_rgba(15,23,42,0.26)] transition-all duration-200 hover:-translate-y-0.5 hover:border-primary/25 hover:bg-white/88 dark:bg-white/8 dark:hover:bg-white/12"
+                          >
+                            <Avatar className="shadow-sm">
+                              {source.avatarUrl ? (
+                                <AvatarImage
+                                  src={source.avatarUrl}
+                                  alt={`${source.name} 头像`}
+                                />
+                              ) : null}
+                              <AvatarFallback>
+                                {getSourceInitials(source.name)}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-sm font-semibold text-foreground">
+                                  {source.name}
+                                </p>
+                                <Badge
+                                  variant="outline"
+                                  className="h-4 rounded-full border-white/65 bg-background/72 px-1.5 text-[10px] text-muted-foreground"
+                                >
+                                  {source.typeLabel}
+                                </Badge>
+                              </div>
+                              <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
+                                {source.handle ? `@${source.handle}` : "查看来源主页"}
+                              </p>
+                            </div>
+                          </a>
+                        </HoverCardTrigger>
+
+                        <HoverCardContent
+                          align="start"
+                          className="rounded-[1.35rem] border-white/60 bg-background/88"
+                        >
+                          <div className="flex items-start gap-3">
+                            <Avatar size="lg" className="shadow-sm">
+                              {source.avatarUrl ? (
+                                <AvatarImage
+                                  src={source.avatarUrl}
+                                  alt={`${source.name} 头像`}
+                                />
+                              ) : null}
+                              <AvatarFallback>
+                                {getSourceInitials(source.name)}
+                              </AvatarFallback>
+                            </Avatar>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="truncate text-sm font-semibold text-foreground">
+                                  {source.name}
+                                </p>
+                                <Badge
+                                  variant="outline"
+                                  className="rounded-full border-white/55 bg-background/78 text-[10px] text-muted-foreground"
+                                >
+                                  {source.typeLabel}
+                                </Badge>
+                              </div>
+                              {source.handle ? (
+                                <p className="mt-1 font-mono text-[11px] text-muted-foreground">
+                                  @{source.handle}
+                                </p>
+                              ) : null}
+                              <p className="mt-3 leading-6 text-muted-foreground">
+                                {source.description}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="mt-4">
+                            <Button asChild size="sm" variant="outline">
+                              <a href={source.href} target="_blank" rel="noreferrer">
+                                查看主页
+                                <ArrowUpRight className="size-4" />
+                              </a>
+                            </Button>
+                          </div>
+                        </HoverCardContent>
+                      </HoverCard>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
 
         <div className="grid gap-6 xl:grid-cols-[240px_minmax(0,1fr)]">
           <div className="hidden xl:block">

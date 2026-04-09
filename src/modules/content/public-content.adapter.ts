@@ -12,6 +12,10 @@ import {
   type ContentGroup,
   type ContentListItem,
 } from "@/modules/content/public-content.view-model"
+import {
+  listSourceDirectoryItems,
+  type SourceDirectoryItem,
+} from "@/modules/sources/source-directory"
 
 function toContentListItem(item: PublicFeedItem): ContentListItem {
   const legacyUrl =
@@ -65,12 +69,14 @@ function toDetailPageData(item: PublicContentDetail) {
 export async function getHomePageData(): Promise<{
   items: ContentListItem[]
   categories: CategoryOption[]
+  sources: SourceDirectoryItem[]
 }> {
   const items = (await listPublicFeedItems()).map(toContentListItem)
 
   return {
     items,
     categories: buildCategoryOptions(items),
+    sources: listSourceDirectoryItems(),
   }
 }
 

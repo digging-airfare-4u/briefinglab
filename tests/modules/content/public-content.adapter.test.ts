@@ -252,7 +252,18 @@ const projectRoot = "/Users/cj/Documents/personal/project/caiji"
 
 describe("public-content adapter", () => {
   it("builds homepage data without exposing storage terms to the client", async () => {
-    const data = await getHomePageData()
+    const data = (await getHomePageData()) as Awaited<
+      ReturnType<typeof getHomePageData>
+    > & {
+      sources?: Array<{
+        id: string
+        name: string
+        typeLabel: string
+        handle?: string
+        description: string
+        avatarUrl?: string
+      }>
+    }
 
     expect(data.categories.map((item) => item.id)).toEqual([
       "all",
@@ -262,6 +273,15 @@ describe("public-content adapter", () => {
     expect(data.items.length).toBeGreaterThan(0)
     expect(data.items[0]).toHaveProperty("sourceName")
     expect(data.items[0]).toHaveProperty("creatorName")
+    expect(data.sources).toBeDefined()
+    expect(data.sources?.find((item) => item.id === "x-karpathy")).toMatchObject({
+      id: "x-karpathy",
+      name: "Andrej Karpathy",
+      typeLabel: "X 账号",
+      handle: "karpathy",
+      description: expect.any(String),
+      avatarUrl: expect.stringContaining("karpathy"),
+    })
   })
 
   it("builds latest, deep and detail page data from the shared adapter layer", async () => {
