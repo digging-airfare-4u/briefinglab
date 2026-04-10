@@ -42,19 +42,6 @@ vi.mock("@/modules/ingest/follow-builders.job", () => ({
   }),
 }))
 
-vi.mock("@/modules/summaries/summary.job", () => ({
-  runSummaryJobs: vi.fn(async () => {
-    mockState.events.push("summary:start")
-    return {
-      processed: 2,
-      created: 6,
-      failed: 0,
-      errors: [],
-      warnings: [],
-    }
-  }),
-}))
-
 import { GET } from "@/app/api/cron/ingest/route"
 
 describe("cron ingest route", () => {
@@ -63,12 +50,8 @@ describe("cron ingest route", () => {
     vi.clearAllMocks()
   })
 
-  it("waits for ingest to finish before running summary jobs", async () => {
-    const responsePromise = GET(
-      new Request("http://localhost:3000/api/cron/ingest", {
-        method: "GET",
-      })
-    )
+  it("runs ingest and returns result", async () => {
+    const responsePromise = GET()
 
     await Promise.resolve()
 
@@ -84,12 +67,7 @@ describe("cron ingest route", () => {
     const payload = await response.json()
 
     expect(response.status).toBe(200)
-    expect(mockState.events).toEqual([
-      "ingest:start",
-      "ingest:end",
-      "summary:start",
-    ])
+    expect(mockState.events).toEqual(["ingest:start", "ingest:end"])
     expect(payload.ingest.runId).toBe("ingest-run-1")
-    expect(payload.summary.created).toBe(6)
   })
 })
