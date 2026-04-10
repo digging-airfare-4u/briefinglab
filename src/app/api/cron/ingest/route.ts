@@ -1,29 +1,42 @@
 import { runFollowBuildersIngestJob } from "@/modules/ingest/follow-builders.job"
 import { runSummaryJobs } from "@/modules/summaries/summary.job"
 
-export async function GET(request: Request) {
-  // Vercel Cron adds a special header for verification
-  const vercelHeader = request.headers.get("x-vercel-signature")
+export const maxDuration = 300
 
-  // In production, verify the cron secret if configured
+function formatJobError(error: unknown) {
+  return {
+    error: error instanceof Error ? error.message : String(error),
+  }
+}
+
+export async function GET() {
+  // In production, re-add `request: Request` and verify the cron secret if configured.
   // const cronSecret = process.env.CRON_SECRET
+  // const vercelHeader = request.headers.get("x-vercel-signature")
   // if (cronSecret && vercelHeader !== cronSecret) {
   //   return Response.json({ message: "Unauthorized" }, { status: 401 })
   // }
 
   try {
-    const results = await Promise.allSettled([
-      runFollowBuildersIngestJob({ dryRun: false }),
-      runSummaryJobs(),
-    ])
+    let ingest: Awaited<ReturnType<typeof runFollowBuildersIngestJob>> | ReturnType<typeof formatJobError>
+    let summary: Awaited<ReturnType<typeof runSummaryJobs>> | ReturnType<typeof formatJobError>
 
-    const ingestResult = results[0]
-    const summaryResult = results[1]
+    try {
+      ingest = await runFollowBuildersIngestJob({ dryRun: false })
+    } catch (error) {
+      ingest = formatJobError(error)
+    }
+
+    try {
+      summary = await runSummaryJobs()
+    } catch (error) {
+      summary = formatJobError(error)
+    }
 
     return Response.json({
       timestamp: new Date().toISOString(),
-      ingest: ingestResult.status === "fulfilled" ? ingestResult.value : { error: ingestResult.reason },
-      summary: summaryResult.status === "fulfilled" ? summaryResult.value : { error: summaryResult.reason },
+      ingest,
+      summary,
     })
   } catch (error) {
     return Response.json(
