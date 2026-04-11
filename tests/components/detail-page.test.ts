@@ -140,6 +140,28 @@ const podcastDetailItem = {
   translatedText: "主持人1 | 00:00 - 00:20 我认为这个领域现在非常难。",
 } as unknown as ContentDetailItem
 
+const shortTweetDetailItem: ContentDetailItem = {
+  id: "tweet-1",
+  slug: "tweet-1",
+  kind: "tweet",
+  title: "Codex now supports longer-running engineering tasks",
+  excerpt: "Codex 正在支持更长的工程执行链路。",
+  summary: "Codex 正在支持更长的工程执行链路。",
+  bullets: ["工程执行更长"],
+  category: "news",
+  cardType: "standard",
+  sourceName: "X / Andrej Karpathy",
+  sourceUrl: "https://x.com/karpathy",
+  creatorName: "Andrej Karpathy",
+  creatorHandle: "karpathy",
+  publishedAt: "2026-04-06T09:10:00.000Z",
+  readTime: "1 分钟",
+  badges: ["动态", "中文摘要", "全文翻译"],
+  sourceLanguage: "en",
+  originalText: "Codex now supports longer-running engineering tasks & deeper loops.",
+  translatedText: "Codex 现在支持更长时间运行的工程任务和更深的执行回路。",
+}
+
 describe("DetailPage", () => {
   it("does not render the related content section", () => {
     const html = renderToStaticMarkup(
@@ -185,5 +207,21 @@ Speaker 2 | 08:35 - 08:59 You want more structure than next-token prediction.`,
     expect(html).toContain('href="#translation-transcript-08-35"')
     expect(html).toContain('id="translation-transcript-00-00"')
     expect(html).toContain('id="translation-transcript-08-35"')
+  })
+
+  it("renders short tweets as a compact bilingual body without extra analysis blocks", () => {
+    const html = renderToStaticMarkup(
+      createElement(DetailPage, {
+        item: shortTweetDetailItem,
+      })
+    )
+
+    expect(html).toContain("双语速览")
+    expect(html).toContain("简体中文译文")
+    expect(html).toContain("英文原文")
+    expect(html).not.toContain("English Summary")
+    expect(html).not.toContain("关键要点")
+    expect(html).not.toContain("1 个要点")
+    expect(html).not.toContain("摘要</h")
   })
 })

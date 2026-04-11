@@ -35,6 +35,8 @@ export function DetailPage({
 }) {
   const hasEnglishSummary = Boolean(item.englishSummary)
   const hasTranslation = Boolean(item.translatedText)
+  const originalBodyLength = item.originalText?.trim().length ?? 0
+  const translatedBodyLength = item.translatedText?.trim().length ?? 0
   const hasOriginalTitle =
     Boolean(item.originalTitle) && item.originalTitle !== item.title
   const isPodcast = item.kind === "podcast_episode"
@@ -50,9 +52,10 @@ export function DetailPage({
     hasTranslation && translatedTranscriptSegments.length > 0
       ? "translation"
       : "original"
-  const isShortContent =
-    item.bullets.length <= 2 &&
-    (item.summary === item.excerpt || !item.excerpt)
+  const isCompactTweet =
+    item.kind === "tweet" &&
+    Math.max(originalBodyLength, translatedBodyLength, item.summary.length) <= 220
+  const showDeepAnalysis = !isCompactTweet
 
   return (
     <div className="min-h-screen">
@@ -71,7 +74,11 @@ export function DetailPage({
                   </Button>
                   <Badge className="rounded-full bg-primary/8 text-primary hover:bg-primary/8">
                     <Sparkles className="size-3.5" />
-                    {isPodcast ? "播客摘要" : "深度摘要"}
+                    {isPodcast
+                      ? "播客摘要"
+                      : isCompactTweet
+                        ? "双语速览"
+                        : "深度摘要"}
                   </Badge>
                   {isPodcast && item.duration ? (
                     <Badge
@@ -130,7 +137,7 @@ export function DetailPage({
               </CardHeader>
             </Card>
 
-            {!isShortContent &&
+            {showDeepAnalysis &&
             (isPodcast ? (
               <Card className="glass-card gap-5 border-primary/18 bg-linear-to-br from-primary/7 to-card shadow-sm shadow-primary/8">
                 <CardHeader className="space-y-3">
@@ -186,30 +193,35 @@ export function DetailPage({
               </div>
             ))}
 
-            <Card className="glass-card gap-4 border-border/65 shadow-sm shadow-primary/5">
-              <CardHeader className="space-y-3">
-                <Badge
-                  variant="outline"
-                  className="w-fit rounded-full border-border/70 bg-background/80 text-muted-foreground"
-                >
-                  <Radar className="size-3.5" />
-                  {isPodcast ? "本期你会听到" : "关键要点"}
-                </Badge>
-                <CardTitle>
-                  {isPodcast ? "本期你会听到" : `${item.bullets.length} 个要点`}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-4">
-                  {item.bullets.map((bullet) => (
-                    <li key={bullet} className="flex gap-3 text-sm leading-7 text-foreground/92">
-                      <span className="mt-2 size-2 shrink-0 rounded-full bg-primary/75" />
-                      <span>{bullet}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+            {showDeepAnalysis ? (
+              <Card className="glass-card gap-4 border-border/65 shadow-sm shadow-primary/5">
+                <CardHeader className="space-y-3">
+                  <Badge
+                    variant="outline"
+                    className="w-fit rounded-full border-border/70 bg-background/80 text-muted-foreground"
+                  >
+                    <Radar className="size-3.5" />
+                    {isPodcast ? "本期你会听到" : "关键要点"}
+                  </Badge>
+                  <CardTitle>
+                    {isPodcast ? "本期你会听到" : `${item.bullets.length} 个要点`}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-4">
+                    {item.bullets.map((bullet) => (
+                      <li
+                        key={bullet}
+                        className="flex gap-3 text-sm leading-7 text-foreground/92"
+                      >
+                        <span className="mt-2 size-2 shrink-0 rounded-full bg-primary/75" />
+                        <span>{bullet}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            ) : null}
 
             {isPodcast && hasTimeline ? (
               <Card
@@ -252,7 +264,7 @@ export function DetailPage({
               </Card>
             ) : null}
 
-            {item.editorialTake ? (
+            {showDeepAnalysis && item.editorialTake ? (
               <Card className="glass-card gap-4 border-border/65 shadow-sm shadow-primary/5">
                 <CardHeader className="space-y-3">
                   <Badge
@@ -299,6 +311,30 @@ export function DetailPage({
                     originalSegments={originalTranscriptSegments}
                     translatedSegments={translatedTranscriptSegments}
                   />
+                ) : isCompactTweet ? (
+                  <div className="space-y-4">
+                    {hasTranslation ? (
+                      <div className="rounded-3xl border border-border/60 bg-background/70 p-5">
+                        <p className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                          <FileText className="size-3.5" />
+                          简体中文译文
+                        </p>
+                        <div className="whitespace-pre-wrap text-[15px] leading-8 text-foreground/92">
+                          {item.translatedText}
+                        </div>
+                      </div>
+                    ) : null}
+
+                    <div className="rounded-3xl border border-border/60 bg-background/70 p-5">
+                      <p className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                        <FileText className="size-3.5" />
+                        英文原文
+                      </p>
+                      <div className="whitespace-pre-wrap text-[15px] leading-8 text-foreground/92">
+                        {item.originalText ?? "原文暂不可用。"}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <Tabs
                     defaultValue={hasTranslation ? "translation" : "original"}
