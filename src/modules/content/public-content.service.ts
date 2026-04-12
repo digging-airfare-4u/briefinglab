@@ -11,12 +11,14 @@ export type PublicSummary = {
   locale: "zh" | "en"
   text: string
   bullets: string[]
+  isFallback: boolean
 }
 
 export type PublicSummaryVariant = {
   locale: "zh" | "en"
   summary: string
   bullets: string[]
+  isFallback: boolean
 }
 
 export type PublicSummaryCollection = Partial<
@@ -212,6 +214,7 @@ function toSummaryVariant(summary: PublicSummary): PublicSummaryVariant {
     locale: summary.locale,
     summary: summary.text,
     bullets: summary.bullets,
+    isFallback: summary.isFallback,
   }
 }
 
@@ -437,7 +440,7 @@ function buildTitleFallback(row: PublicContentRow, summary: PublicSummary) {
     typeof row.rawPayload.description === "string"
       ? row.rawPayload.description
       : undefined,
-    summary.text,
+    summary.isFallback ? undefined : summary.text,
   ]
 
   for (const candidate of titleCandidates) {
@@ -471,6 +474,7 @@ function getPrimarySummary(row: PublicContentRow): PublicSummary {
       locale: "zh",
       text: zhSummary.summary,
       bullets: zhSummary.bullets,
+      isFallback: false,
     }
   }
 
@@ -481,24 +485,15 @@ function getPrimarySummary(row: PublicContentRow): PublicSummary {
       locale: "en",
       text: enSummary.summary,
       bullets: enSummary.bullets,
+      isFallback: false,
     }
   }
 
-  const fallbackText = cleanText(
-    firstNonEmptyString([getSourceText(row), row.title, "摘要暂未生成。"]) ??
-      "摘要暂未生成。"
-  )
-
-  const fragments = fallbackText
-    .split(/(?<=[.!?。！？])\s+|\n+/)
-    .map(cleanText)
-    .filter(Boolean)
-
   return {
     locale: "zh",
-    text: truncate(fallbackText || "摘要暂未生成。", 180),
-    bullets:
-      fragments.slice(0, 3).map((fragment) => truncate(fragment, 120)) ?? [],
+    text: "摘要暂未生成。",
+    bullets: [],
+    isFallback: true,
   }
 }
 
@@ -507,7 +502,7 @@ function buildExcerpt(row: PublicContentRow, summary: PublicSummary) {
   const fallback = cleanDecodedText(
     translation?.plainText ??
       translation?.transcriptText ??
-      summary.text ??
+      (summary.isFallback ? undefined : summary.text) ??
       row.plainText ??
       row.transcriptText ??
       row.title ??
@@ -518,12 +513,17 @@ function buildExcerpt(row: PublicContentRow, summary: PublicSummary) {
 }
 
 function buildReadTime(row: PublicContentRow, category: FeedCategory) {
+  const summary = getPrimarySummary(row)
   const sourceText = cleanDecodedText(
     row.transcriptText ?? row.plainText ?? row.title ?? row.sourceName
   )
   const minutes = Math.max(1, Math.ceil(sourceText.length / 420))
 
-  return category === "article" ? `${minutes} 分钟摘要` : `${minutes} 分钟`
+  if (category !== "article") {
+    return `${minutes} 分钟`
+  }
+
+  return summary.isFallback ? `${minutes} 分钟阅读` : `${minutes} 分钟摘要`
 }
 
 function buildBadges(row: PublicContentRow, summary: PublicSummary) {
@@ -542,7 +542,7 @@ function buildBadges(row: PublicContentRow, summary: PublicSummary) {
       break
   }
 
-  if (summary.locale === "zh") {
+  if (summary.locale === "zh" && !summary.isFallback) {
     badges.add("中文摘要")
   }
 

@@ -35,6 +35,7 @@ export function DetailPage({
 }) {
   const hasEnglishSummary = Boolean(item.englishSummary)
   const hasTranslation = Boolean(item.translatedText)
+  const hasSummary = item.hasSummary
   const originalBodyLength = item.originalText?.trim().length ?? 0
   const translatedBodyLength = item.translatedText?.trim().length ?? 0
   const hasOriginalTitle =
@@ -75,10 +76,14 @@ export function DetailPage({
                   <Badge className="rounded-full bg-primary/8 text-primary hover:bg-primary/8">
                     <Sparkles className="size-3.5" />
                     {isPodcast
-                      ? "播客摘要"
+                      ? hasSummary
+                        ? "播客摘要"
+                        : "播客摘录"
                       : isCompactTweet
                         ? "双语速览"
-                        : "深度摘要"}
+                        : hasSummary
+                          ? "深度摘要"
+                          : "原文摘录"}
                   </Badge>
                   {isPodcast && item.duration ? (
                     <Badge
@@ -141,13 +146,15 @@ export function DetailPage({
             (isPodcast ? (
               <Card className="glass-card gap-5 border-primary/18 bg-linear-to-br from-primary/7 to-card shadow-sm shadow-primary/8">
                 <CardHeader className="space-y-3">
-                  <Badge className="w-fit rounded-full bg-primary text-primary-foreground hover:bg-primary">
-                    TL;DR
-                  </Badge>
-                  <CardTitle className="text-2xl">这期讲了什么</CardTitle>
+                    <Badge className="w-fit rounded-full bg-primary text-primary-foreground hover:bg-primary">
+                      {hasSummary ? "TL;DR" : "摘录"}
+                    </Badge>
+                  <CardTitle className="text-2xl">
+                    {hasSummary ? "这期讲了什么" : "当前先看原文摘录"}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-[15px] leading-8 text-foreground/92">
-                  <p>{item.summary}</p>
+                  <p>{hasSummary ? item.summary : item.excerpt}</p>
                 </CardContent>
               </Card>
             ) : (
@@ -155,16 +162,18 @@ export function DetailPage({
                 <Card className="glass-card gap-5 border-primary/18 bg-linear-to-br from-primary/7 to-card shadow-sm shadow-primary/8">
                   <CardHeader className="space-y-3">
                     <Badge className="w-fit rounded-full bg-primary text-primary-foreground hover:bg-primary">
-                      中文摘要
+                      {hasSummary ? "中文摘要" : "原文摘录"}
                     </Badge>
-                    <CardTitle className="text-2xl">摘要</CardTitle>
+                    <CardTitle className="text-2xl">
+                      {hasSummary ? "摘要" : "摘要暂未生成"}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4 text-[15px] leading-8 text-foreground/92">
-                    <p>{item.summary}</p>
+                    <p>{hasSummary ? item.summary : item.excerpt}</p>
                   </CardContent>
                 </Card>
 
-                {hasEnglishSummary ? (
+                {hasSummary && hasEnglishSummary ? (
                   <Card className="glass-card gap-5 border-border/65 bg-linear-to-br from-background to-card shadow-sm shadow-primary/5">
                     <CardHeader className="space-y-3">
                       <Badge
@@ -193,7 +202,7 @@ export function DetailPage({
               </div>
             ))}
 
-            {showDeepAnalysis ? (
+            {showDeepAnalysis && hasSummary && item.bullets.length > 0 ? (
               <Card className="glass-card gap-4 border-border/65 shadow-sm shadow-primary/5">
                 <CardHeader className="space-y-3">
                   <Badge

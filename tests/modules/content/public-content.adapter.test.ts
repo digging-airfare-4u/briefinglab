@@ -16,17 +16,20 @@ vi.mock("@/modules/content/public-content.service", () => ({
         locale: "zh",
         text: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
         bullets: ["可恢复", "可检查", "可继续执行"],
+        isFallback: false,
       },
       summaries: {
         zh: {
           locale: "zh",
           summary: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
           bullets: ["可恢复", "可检查", "可继续执行"],
+          isFallback: false,
         },
         en: {
           locale: "en",
           summary: "Execution loops make agent products more reliable.",
           bullets: ["Resume", "Inspect", "Continue"],
+          isFallback: false,
         },
       },
       body: {
@@ -64,12 +67,14 @@ vi.mock("@/modules/content/public-content.service", () => ({
         locale: "zh",
         text: "Codex 正在支持更长的工程执行链路。",
         bullets: ["长任务", "可恢复"],
+        isFallback: false,
       },
       summaries: {
         zh: {
           locale: "zh",
           summary: "Codex 正在支持更长的工程执行链路。",
           bullets: ["长任务", "可恢复"],
+          isFallback: false,
         },
       },
       body: {
@@ -106,17 +111,20 @@ vi.mock("@/modules/content/public-content.service", () => ({
             locale: "zh",
             text: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
             bullets: ["可恢复", "可检查", "可继续执行"],
+            isFallback: false,
           },
           summaries: {
             zh: {
               locale: "zh",
               summary: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
               bullets: ["可恢复", "可检查", "可继续执行"],
+              isFallback: false,
             },
             en: {
               locale: "en",
               summary: "Execution loops make agent products more reliable.",
               bullets: ["Resume", "Inspect", "Continue"],
+              isFallback: false,
             },
           },
           body: {
@@ -154,12 +162,14 @@ vi.mock("@/modules/content/public-content.service", () => ({
                 locale: "en",
                 text: "Durable agents rely on checkpoints and retries.",
                 bullets: ["Checkpoints", "Retries"],
+                isFallback: false,
               },
               summaries: {
                 en: {
                   locale: "en",
                   summary: "Durable agents rely on checkpoints and retries.",
                   bullets: ["Checkpoints", "Retries"],
+                  isFallback: false,
                 },
               },
               body: {
@@ -197,12 +207,14 @@ vi.mock("@/modules/content/public-content.service", () => ({
               locale: "zh",
               text: "这期播客讨论 durable agents 为什么需要 checkpoint 和 retry。",
               bullets: ["Checkpoint", "Retry"],
+              isFallback: false,
             },
             summaries: {
               zh: {
                 locale: "zh",
                 summary: "这期播客讨论 durable agents 为什么需要 checkpoint 和 retry。",
                 bullets: ["Checkpoint", "Retry"],
+                isFallback: false,
               },
             },
             body: {

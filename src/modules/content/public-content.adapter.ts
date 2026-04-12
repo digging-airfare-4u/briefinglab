@@ -33,6 +33,7 @@ function toContentListItem(item: PublicFeedItem): ContentListItem {
     excerpt: item.excerpt,
     summary: item.summary.text,
     bullets: item.summary.bullets,
+    hasSummary: !item.summary.isFallback,
     editorialTake: item.editorialTake,
     category: item.category,
     cardType: item.cardType,

@@ -19,6 +19,7 @@ export type ContentListItem = {
   excerpt: string
   summary: string
   bullets: string[]
+  hasSummary: boolean
   editorialTake?: string
   category: ContentCategory
   cardType: CardType

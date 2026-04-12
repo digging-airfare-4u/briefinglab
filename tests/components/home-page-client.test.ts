@@ -101,6 +101,7 @@ const items: ContentListItem[] = [
     excerpt: "Codex 正在支持更长的工程执行链路。",
     summary: "Codex 正在支持更长的工程执行链路。",
     bullets: ["长任务", "可恢复"],
+    hasSummary: true,
     category: "news",
     cardType: "standard",
     sourceName: "X / Andrej Karpathy",

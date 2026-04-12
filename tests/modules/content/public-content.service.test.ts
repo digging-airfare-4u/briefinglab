@@ -176,6 +176,25 @@ describe("public-content.service", () => {
     )
   })
 
+  it("distinguishes excerpt from summary when no generated summary exists", async () => {
+    const detail = await service.getPublicContentDetail("tweet-1")
+    const feed = await service.getPublicFeed({
+      category: "news",
+      limit: 10,
+    })
+    const item = feed.groups.flatMap((group) => group.items).find((entry) => entry.slug === "tweet-1")
+
+    expect(detail).not.toBeNull()
+    expect(detail?.summary.text).toBe("摘要暂未生成。")
+    expect(detail?.summary.isFallback).toBe(true)
+    expect(detail?.summary.bullets).toHaveLength(0)
+    expect(detail?.excerpt).toBe(
+      "Codex now supports longer-running engineering tasks & deeper loops."
+    )
+    expect(detail?.badges).not.toContain("中文摘要")
+    expect(item?.readTime).toBe("1 分钟")
+  })
+
   it("falls back to a generic title when tweet text is only emoji and links", async () => {
     const detail = await service.getPublicContentDetail("tweet-link-1")
 
