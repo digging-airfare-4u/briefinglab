@@ -193,6 +193,61 @@ vi.mock("@/modules/content/public-content.service", () => ({
             },
           ],
         }
+      : slug === "blog-compact-1"
+        ? {
+            id: "blog-compact-1",
+            slug: "blog-compact-1",
+            kind: "blog_post",
+            category: "article",
+            cardType: "digest",
+            title: "Why small launches matter",
+            excerpt: "Small launches should be easy to scan.",
+            summary: {
+              locale: "zh",
+              text: "小发布内容应该直接展示原文和译文。",
+              bullets: ["保持轻量"],
+              isFallback: false,
+            },
+            summaries: {
+              zh: {
+                locale: "zh",
+                summary: "小发布内容应该直接展示原文和译文。",
+                bullets: ["保持轻量"],
+                isFallback: false,
+              },
+              en: {
+                locale: "en",
+                summary: "Small launches should be easy to scan.",
+                bullets: ["Easy to scan"],
+                isFallback: false,
+              },
+            },
+            body: {
+              original: {
+                locale: "en",
+                title: "Why small launches matter",
+                text:
+                  "Small launches should be easy to scan. Show the original and a strong translation.",
+              },
+              translation: {
+                locale: "zh",
+                title: "为什么小发布也值得读",
+                text: "小发布应该让人快速看完。直接展示原文和高质量译文即可。",
+              },
+            },
+            creator: {
+              name: "Example Author",
+              handle: "example",
+            },
+            source: {
+              name: "Example Blog",
+              url: "https://example.com/blog-compact-1",
+            },
+            publishedAt: "2026-04-06T10:10:00.000Z",
+            readTime: "1 分钟",
+            badges: ["文章", "中文摘要", "全文翻译"],
+            relatedItems: [],
+          }
       : slug === "podcast-1"
         ? {
             id: "podcast-1",
@@ -331,6 +386,15 @@ describe("public-content adapter", () => {
       start: "00:00",
       title: "Durable agents need checkpoints.",
     })
+    expect(item?.detailMode).toBe("deep")
+  })
+
+  it("classifies short non-podcast content as compact detail", async () => {
+    const detail = await getContentDetailPageData("blog-compact-1")
+
+    expect(detail?.item.slug).toBe("blog-compact-1")
+    expect(detail?.item.detailMode).toBe("compact")
+    expect(detail?.item.englishSummary).toContain("Small launches")
   })
 
   it("keeps app and site UI away from mock-content imports", () => {

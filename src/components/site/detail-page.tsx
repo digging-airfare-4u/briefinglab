@@ -36,8 +36,6 @@ export function DetailPage({
   const hasEnglishSummary = Boolean(item.englishSummary)
   const hasTranslation = Boolean(item.translatedText)
   const hasSummary = item.hasSummary
-  const originalBodyLength = item.originalText?.trim().length ?? 0
-  const translatedBodyLength = item.translatedText?.trim().length ?? 0
   const hasOriginalTitle =
     Boolean(item.originalTitle) && item.originalTitle !== item.title
   const isPodcast = item.kind === "podcast_episode"
@@ -53,10 +51,8 @@ export function DetailPage({
     hasTranslation && translatedTranscriptSegments.length > 0
       ? "translation"
       : "original"
-  const isCompactTweet =
-    item.kind === "tweet" &&
-    Math.max(originalBodyLength, translatedBodyLength, item.summary.length) <= 220
-  const showDeepAnalysis = !isCompactTweet
+  const isCompactContent = item.detailMode === "compact"
+  const showDeepAnalysis = item.detailMode === "deep"
 
   return (
     <div className="min-h-screen">
@@ -79,7 +75,7 @@ export function DetailPage({
                       ? hasSummary
                         ? "播客摘要"
                         : "播客摘录"
-                      : isCompactTweet
+                      : isCompactContent
                         ? "双语速览"
                         : hasSummary
                           ? "深度摘要"
@@ -320,7 +316,7 @@ export function DetailPage({
                     originalSegments={originalTranscriptSegments}
                     translatedSegments={translatedTranscriptSegments}
                   />
-                ) : isCompactTweet ? (
+                ) : isCompactContent ? (
                   <div className="space-y-4">
                     {hasTranslation ? (
                       <div className="rounded-3xl border border-border/60 bg-background/70 p-5">

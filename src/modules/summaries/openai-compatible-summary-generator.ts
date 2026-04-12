@@ -1,4 +1,8 @@
 import type { OptionalLlmEnv } from "@/config/env"
+import {
+  resolveSummaryEnrichmentMode,
+  type SummaryEnrichmentMode,
+} from "@/modules/summaries/enrichment-mode"
 import type { PendingSummaryInput } from "@/modules/summaries/summary.repository"
 import type {
   GeneratedEnrichment,
@@ -120,15 +124,12 @@ function requireString(value: unknown, field: string) {
   return cleanText(value)
 }
 
-function buildSummaries(parsed: GeneratedPayload, model: string): GeneratedSummary[] {
-  return [
-    {
-      locale: "en",
-      summary: requireString(parsed.summary_en, "summary_en"),
-      bullets: asStringArray(parsed.bullets_en),
-      model,
-      status: "completed",
-    },
+function buildSummaries(
+  parsed: GeneratedPayload,
+  model: string,
+  mode: SummaryEnrichmentMode
+): GeneratedSummary[] {
+  const summaries: GeneratedSummary[] = [
     {
       locale: "zh",
       summary: requireString(parsed.summary_zh, "summary_zh"),
@@ -137,6 +138,18 @@ function buildSummaries(parsed: GeneratedPayload, model: string): GeneratedSumma
       status: "completed",
     },
   ]
+
+  if (mode === "deep") {
+    summaries.unshift({
+      locale: "en",
+      summary: requireString(parsed.summary_en, "summary_en"),
+      bullets: asStringArray(parsed.bullets_en),
+      model,
+      status: "completed",
+    })
+  }
+
+  return summaries
 }
 
 function buildTranslations(
@@ -180,7 +193,7 @@ function buildTranslations(
   ]
 }
 
-function buildPrompt(input: PendingSummaryInput) {
+function buildPrompt(input: PendingSummaryInput, mode: SummaryEnrichmentMode) {
   const sourceText = extractSourceText(input)
   const sourceKind =
     input.kind === "tweet"
@@ -192,10 +205,21 @@ function buildPrompt(input: PendingSummaryInput) {
   return [
     "You are an editor that produces bilingual summaries and Chinese translations.",
     "Return JSON only. Do not wrap the JSON in markdown.",
-    "Required JSON keys: summary_en, bullets_en, summary_zh, bullets_zh, title_zh, plain_text_zh, transcript_text_zh.",
+    `enrichment_mode: ${mode}`,
+    mode === "compact"
+      ? "Required JSON keys: summary_zh, bullets_zh, title_zh, plain_text_zh, transcript_text_zh."
+      : "Required JSON keys: summary_en, bullets_en, summary_zh, bullets_zh, title_zh, plain_text_zh, transcript_text_zh.",
     "Rules:",
-    "- summary_en and summary_zh must be concise but informative.",
-    "- bullets_en and bullets_zh should each contain 2 to 4 short bullet points.",
+    ...(mode === "compact"
+      ? [
+          "- summary_zh must be concise and faithful to the source.",
+          "- bullets_zh may contain 0 to 2 short bullet points. Use an empty array when extra decomposition is unnecessary.",
+          "- Do not return summary_en or bullets_en unless they are explicitly requested.",
+        ]
+      : [
+          "- summary_en and summary_zh must be concise but informative.",
+          "- bullets_en and bullets_zh should each contain 2 to 4 short bullet points.",
+        ]),
     "- title_zh should be a natural Simplified Chinese translation when a title exists.",
     "- If transcript text exists, put the Chinese full translation into transcript_text_zh.",
     "- Otherwise put the Chinese full translation into plain_text_zh.",
@@ -219,6 +243,7 @@ export function createOpenAICompatibleSummaryGenerator(
 ): SummaryGenerator {
   return {
     async generate(input: PendingSummaryInput): Promise<GeneratedEnrichment> {
+      const mode = resolveSummaryEnrichmentMode(input)
       const response = await fetchImpl(
         `${config.baseUrl.replace(/\/$/, "")}/chat/completions`,
         {
@@ -241,7 +266,7 @@ export function createOpenAICompatibleSummaryGenerator(
               },
               {
                 role: "user",
-                content: buildPrompt(input),
+                content: buildPrompt(input, mode),
               },
             ],
           }),
@@ -268,7 +293,7 @@ export function createOpenAICompatibleSummaryGenerator(
       const parsed = parseJsonPayload(content)
 
       return {
-        summaries: buildSummaries(parsed, config.model),
+        summaries: buildSummaries(parsed, config.model, mode),
         translations: buildTranslations(input, parsed, config.model),
       }
     },

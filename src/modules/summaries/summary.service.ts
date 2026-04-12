@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 import type { NormalizedContentKind } from "@/modules/ingest/types"
+import { resolveSummaryEnrichmentMode } from "@/modules/summaries/enrichment-mode"
 import type {
   ContentSummaryRecord,
   ContentTranslationRecord,
@@ -157,20 +158,31 @@ export function createHeuristicSummaryGenerator(): SummaryGenerator {
       const fragments = extractFragments(input)
       const prompt = loadPrompt(input.kind)
       const model = `heuristic:${getPromptFilename(input.kind)}:${prompt.length}`
+      const mode = resolveSummaryEnrichmentMode(input)
+      const summaries =
+        mode === "compact"
+          ? [
+              {
+                ...buildChineseSummary(input, fragments),
+                model,
+                status: "completed" as const,
+              },
+            ]
+          : [
+              {
+                ...buildEnglishSummary(input, fragments),
+                model,
+                status: "completed" as const,
+              },
+              {
+                ...buildChineseSummary(input, fragments),
+                model,
+                status: "completed" as const,
+              },
+            ]
 
       return {
-        summaries: [
-          {
-            ...buildEnglishSummary(input, fragments),
-            model,
-            status: "completed" as const,
-          },
-          {
-            ...buildChineseSummary(input, fragments),
-            model,
-            status: "completed" as const,
-          },
-        ],
+        summaries,
         translations: [],
       }
     },

@@ -227,6 +227,7 @@ function getSummaryCollection(row: PublicContentRow): PublicSummaryCollection {
         locale: summary.locale,
         summary: summary.summary,
         bullets: summary.bullets,
+        isFallback: false,
       }
     }
   }

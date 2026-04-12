@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto"
 
 import type { NormalizedContentKind } from "@/modules/ingest/types"
+import { resolveSummaryEnrichmentMode } from "@/modules/summaries/enrichment-mode"
 
 export type SummaryLocale = "zh" | "en"
 
@@ -40,6 +41,32 @@ export type ContentTranslationRecord = {
   transcriptText?: string
   model?: string
   status: "completed"
+}
+
+function hasSummaryLocale(
+  summaries: Array<{ locale?: string | null }>,
+  locale: SummaryLocale
+) {
+  return summaries.some(
+    (summary) =>
+      summary &&
+      typeof summary === "object" &&
+      "locale" in summary &&
+      summary.locale === locale
+  )
+}
+
+function hasTranslationLocale(
+  translations: Array<{ locale?: string | null }>,
+  locale: SummaryLocale
+) {
+  return translations.some(
+    (translation) =>
+      translation &&
+      typeof translation === "object" &&
+      "locale" in translation &&
+      translation.locale === locale
+  )
 }
 
 export interface SummaryRepository {
@@ -191,29 +218,22 @@ export function createSupabaseSummaryRepository(
               ? [row.content_translations]
               : []
 
-          const hasZhSummary = summaries.some(
-            (summary) =>
-              summary &&
-              typeof summary === "object" &&
-              "locale" in summary &&
-              summary.locale === "zh"
-          )
-          const hasEnSummary = summaries.some(
-            (summary) =>
-              summary &&
-              typeof summary === "object" &&
-              "locale" in summary &&
-              summary.locale === "en"
-          )
-          const hasZhTranslation = translations.some(
-            (translation) =>
-              translation &&
-              typeof translation === "object" &&
-              "locale" in translation &&
-              translation.locale === "zh"
-          )
+          const body = firstRelation(row.content_bodies)
+          const mode = resolveSummaryEnrichmentMode({
+            kind: row.kind,
+            rawPayload:
+              typeof row.raw_payload === "object" && row.raw_payload
+                ? row.raw_payload
+                : {},
+            plainText: body?.plain_text ?? undefined,
+            transcriptText: body?.transcript_text ?? undefined,
+          })
 
-          return !hasZhSummary || !hasEnSummary || !hasZhTranslation
+          return (
+            !hasSummaryLocale(summaries, "zh") ||
+            !hasTranslationLocale(translations, "zh") ||
+            (mode === "deep" && !hasSummaryLocale(summaries, "en"))
+          )
         })
         .slice(0, limit)
         .map((row) => {
@@ -314,22 +334,28 @@ export function createInMemorySummaryRepository(
     async listPendingSummaryInputs(limit = 20) {
       return pending
         .filter(
-          (input) =>
-            !summaries.some(
-              (summary) =>
-                summary.contentItemId === input.contentItemId &&
-                summary.locale === "zh"
-            ) ||
-            !summaries.some(
-              (summary) =>
-                summary.contentItemId === input.contentItemId &&
-                summary.locale === "en"
-            ) ||
-            !translations.some(
-              (translation) =>
-                translation.contentItemId === input.contentItemId &&
-                translation.locale === "zh"
+          (input) => {
+            const mode = resolveSummaryEnrichmentMode(input)
+
+            return (
+              !summaries.some(
+                (summary) =>
+                  summary.contentItemId === input.contentItemId &&
+                  summary.locale === "zh"
+              ) ||
+              !translations.some(
+                (translation) =>
+                  translation.contentItemId === input.contentItemId &&
+                  translation.locale === "zh"
+              ) ||
+              (mode === "deep" &&
+                !summaries.some(
+                  (summary) =>
+                    summary.contentItemId === input.contentItemId &&
+                    summary.locale === "en"
+                ))
             )
+          }
         )
         .slice(0, limit)
     },

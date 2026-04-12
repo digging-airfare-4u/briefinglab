@@ -50,7 +50,7 @@ describe("summary job", () => {
     })
 
     expect(result.processed).toBe(1)
-    expect(result.created).toBe(2)
+    expect(result.created).toBe(1)
     expect(result.failed).toBe(0)
     expect(result.warnings).toEqual([
       expect.stringContaining("LLM"),

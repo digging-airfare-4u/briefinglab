@@ -1,3 +1,5 @@
+import type { ContentDetailMode } from "@/modules/content/content-complexity"
+
 export type ContentCategory = "news" | "article"
 export type CategoryFilter = "all" | ContentCategory
 export type CardType = "standard" | "digest"
@@ -33,6 +35,7 @@ export type ContentListItem = {
 }
 
 export type ContentDetailItem = ContentListItem & {
+  detailMode: ContentDetailMode
   sourceLanguage: string
   duration?: string
   timeline?: ContentTimelineItem[]

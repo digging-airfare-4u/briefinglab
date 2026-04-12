@@ -117,7 +117,7 @@ const items: ContentListItem[] = [
 describe("HomePageClient", () => {
   it("renders a compact horizontal source rail above the timeline", () => {
     const html = renderToStaticMarkup(
-      createElement(HomePageClient as unknown as (props: unknown) => ReactNode, {
+      createElement(HomePageClient, {
         initialItems: items,
         categories,
         sources: [

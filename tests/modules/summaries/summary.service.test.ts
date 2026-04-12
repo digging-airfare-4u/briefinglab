@@ -141,4 +141,39 @@ describe("summary service", () => {
     expect(repository.snapshot().summaries).toHaveLength(2)
     expect(repository.snapshot().translations).toHaveLength(1)
   })
+
+  it("treats compact content as complete after Chinese summary and translation are stored", async () => {
+    const repository = createInMemorySummaryRepository([makePendingInput()])
+    const generator: SummaryGenerator = {
+      generate: vi.fn(async () => ({
+        summaries: [
+          {
+            locale: "zh" as const,
+            summary: "Agents 正在从 demo 走向可持续执行。",
+            bullets: [],
+            model: "test-generator",
+            status: "completed" as const,
+          },
+        ],
+        translations: [
+          {
+            locale: "zh" as const,
+            title: "Agents 正在从 demo 走向可持续执行",
+            plainText: "Agents 正在从 demo 走向可持续执行工作流。",
+            model: "test-generator",
+            status: "completed" as const,
+          },
+        ],
+      })),
+    }
+    const service = new SummaryService(repository, generator)
+
+    const firstRun = await service.runPending()
+    const secondRun = await service.runPending()
+
+    expect(firstRun.processed).toBe(1)
+    expect(firstRun.created).toBe(2)
+    expect(secondRun.processed).toBe(0)
+    expect(generator.generate).toHaveBeenCalledTimes(1)
+  })
 })

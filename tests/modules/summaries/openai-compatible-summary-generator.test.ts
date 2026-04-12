@@ -67,7 +67,15 @@ describe("openai compatible summary generator", () => {
       fetchImpl as typeof fetch
     )
 
-    const result = await generator.generate(makePendingInput())
+    const result = await generator.generate(
+      makePendingInput({
+        plainText: `Execution loops improve reliability by letting systems resume partial work, inspect intermediate state, continue across multiple execution steps, coordinate across tools, and preserve work between retries.
+
+They are especially useful for longer engineering tasks where a single pass is not enough and the system needs checkpoints, retries, explicit continuation logic, operator review, and durable state between separate tool calls.
+
+In practice, they turn agent systems from one-shot demos into workflows that can survive interruption, expose intermediate artifacts, and keep making progress over time.`,
+      })
+    )
 
     expect(fetchImpl).toHaveBeenCalledTimes(1)
     expect(result.summaries.map((item) => item.locale).sort()).toEqual([
@@ -120,14 +128,89 @@ describe("openai compatible summary generator", () => {
       fetchImpl as typeof fetch
     )
 
-    const result = await generator.generate(makePendingInput())
+    const result = await generator.generate(
+      makePendingInput({
+        plainText: `Execution loops make agent products more reliable because they can resume, inspect state, continue from partial work, coordinate across tools, and keep longer-running jobs observable.
+
+They also make it possible to checkpoint complex workflows, recover from intermittent failures, and hand work across multiple steps without losing context.`,
+      })
+    )
     const calls = (fetchImpl as unknown as { mock: { calls: Array<unknown[]> } }).mock
       .calls
     const request = calls[0]?.[1] as RequestInit | undefined
     const payload = JSON.parse(String(request?.body))
 
-    expect(result.summaries[0]?.summary).toContain("English")
+    expect(result.summaries.find((item) => item.locale === "en")?.summary).toContain(
+      "English"
+    )
     expect(result.translations[0]?.plainText).toContain("中文译文")
     expect(payload.response_format).toEqual({ type: "json_object" })
+  })
+
+  it("uses compact enrichment for short content and only requires Chinese summary plus translation", async () => {
+    const fetchImpl = vi.fn(async () =>
+      new Response(
+        JSON.stringify({
+          choices: [
+            {
+              message: {
+                content: JSON.stringify({
+                  summary_zh: "Codex 现在支持更长时间运行的工程任务。",
+                  bullets_zh: [],
+                  title_zh: "Codex 现在支持更长时间运行的工程任务",
+                  plain_text_zh:
+                    "Codex 现在支持更长时间运行的工程任务和更深的执行回路。",
+                }),
+              },
+            },
+          ],
+        }),
+        {
+          status: 200,
+          headers: {
+            "content-type": "application/json",
+          },
+        }
+      )
+    )
+
+    const { createOpenAICompatibleSummaryGenerator } = await import(
+      "@/modules/summaries/openai-compatible-summary-generator"
+    )
+    const generator = createOpenAICompatibleSummaryGenerator(
+      {
+        baseUrl: "https://example.com/v1",
+        apiKey: "test-key",
+        model: "test-model",
+      },
+      fetchImpl as typeof fetch
+    )
+
+    const result = await generator.generate(
+      makePendingInput({
+        kind: "tweet",
+        title: null,
+        plainText:
+          "Codex now supports longer-running engineering tasks & deeper loops.",
+        rawPayload: {
+          text: "Codex now supports longer-running engineering tasks & deeper loops.",
+        },
+      })
+    )
+    const calls = (fetchImpl as unknown as { mock: { calls: Array<unknown[]> } }).mock
+      .calls
+    const request = calls[0]?.[1] as RequestInit | undefined
+    const payload = JSON.parse(String(request?.body))
+    const prompt = payload.messages?.[1]?.content as string
+
+    expect(result.summaries.map((item) => item.locale)).toEqual(["zh"])
+    expect(result.translations[0]?.plainText).toContain("更深的执行回路")
+    expect(prompt).toContain("enrichment_mode: compact")
+    expect(prompt).not.toContain(
+      "Required JSON keys: summary_en, bullets_en, summary_zh"
+    )
+    expect(prompt).not.toContain(
+      "- summary_en and summary_zh must be concise but informative."
+    )
   })
 })

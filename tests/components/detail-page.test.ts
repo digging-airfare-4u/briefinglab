@@ -71,6 +71,7 @@ const detailItem: ContentDetailItem = {
   publishedAt: "2026-04-06T08:10:00.000Z",
   readTime: "3 分钟摘要",
   badges: ["文章", "中文摘要"],
+  detailMode: "deep",
   sourceLanguage: "en",
   originalTitle: "Why execution loops matter",
   translatedTitle: "为什么执行回路很重要",
@@ -125,6 +126,7 @@ const podcastDetailItem = {
   publishedAt: "2026-04-02T09:55:00.000Z",
   readTime: "173 分钟摘要",
   badges: ["播客", "中文摘要", "全文翻译"],
+  detailMode: "deep",
   sourceLanguage: "en",
   duration: "1:06:37",
   timeline: [
@@ -161,9 +163,39 @@ const shortTweetDetailItem: ContentDetailItem = {
   publishedAt: "2026-04-06T09:10:00.000Z",
   readTime: "1 分钟",
   badges: ["动态", "中文摘要", "全文翻译"],
+  detailMode: "compact",
   sourceLanguage: "en",
   originalText: "Codex now supports longer-running engineering tasks & deeper loops.",
   translatedText: "Codex 现在支持更长时间运行的工程任务和更深的执行回路。",
+}
+
+const shortBlogDetailItem: ContentDetailItem = {
+  id: "blog-compact-1",
+  slug: "blog-compact-1",
+  kind: "blog_post",
+  title: "Why small launches matter",
+  excerpt: "小发布也值得快速看完，而不是被拆成一堆分析卡。",
+  summary: "小发布也值得快速看完，而不是被拆成一堆分析卡。",
+  bullets: ["保持轻量"],
+  hasSummary: true,
+  category: "article",
+  cardType: "digest",
+  sourceName: "Example Blog",
+  sourceUrl: "https://example.com/blog-compact-1",
+  creatorName: "Example Author",
+  creatorHandle: "example",
+  publishedAt: "2026-04-06T10:10:00.000Z",
+  readTime: "1 分钟",
+  badges: ["文章", "中文摘要", "全文翻译"],
+  detailMode: "compact",
+  sourceLanguage: "en",
+  originalTitle: "Why small launches matter",
+  translatedTitle: "为什么小发布也值得读",
+  originalText:
+    "Small launches should be easy to scan. Show the original and a strong translation.",
+  translatedText: "小发布应该让人快速看完。直接展示原文和高质量译文即可。",
+  englishSummary: "Small launches should be easy to scan.",
+  englishBullets: ["Easy to scan"],
 }
 
 describe("DetailPage", () => {
@@ -226,6 +258,21 @@ Speaker 2 | 08:35 - 08:59 You want more structure than next-token prediction.`,
     expect(html).not.toContain("English Summary")
     expect(html).not.toContain("关键要点")
     expect(html).not.toContain("1 个要点")
+    expect(html).not.toContain("摘要</h")
+  })
+
+  it("renders short blog posts as a compact bilingual body without deep-analysis cards", () => {
+    const html = renderToStaticMarkup(
+      createElement(DetailPage, {
+        item: shortBlogDetailItem,
+      })
+    )
+
+    expect(html).toContain("双语速览")
+    expect(html).toContain("简体中文译文")
+    expect(html).toContain("英文原文")
+    expect(html).not.toContain("English Summary")
+    expect(html).not.toContain("关键要点")
     expect(html).not.toContain("摘要</h")
   })
 })

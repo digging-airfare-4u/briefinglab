@@ -4,6 +4,7 @@ import {
   type PublicContentDetail,
   type PublicFeedItem,
 } from "@/modules/content/public-content.service"
+import { resolveDetailMode } from "@/modules/content/content-complexity"
 import {
   buildCategoryOptions,
   groupContentItems,
@@ -50,17 +51,27 @@ function toContentListItem(item: PublicFeedItem): ContentListItem {
 function toDetailPageData(item: PublicContentDetail) {
   const translation = item.body.translation
   const englishSummary = item.summaries.en
+  const originalText = item.body.original.text ?? undefined
+  const translatedText = translation?.text ?? undefined
+  const detailMode = resolveDetailMode({
+    kind: item.kind,
+    timelineLength: item.timeline?.length,
+    summary: item.summary.text,
+    originalText,
+    translatedText,
+  })
 
   return {
     item: {
       ...toContentListItem(item),
+      detailMode,
       sourceLanguage: item.body.original.locale,
       duration: item.duration,
       timeline: item.timeline,
       originalTitle: item.body.original.title ?? undefined,
       translatedTitle: translation?.title ?? undefined,
-      originalText: item.body.original.text ?? undefined,
-      translatedText: translation?.text ?? undefined,
+      originalText,
+      translatedText,
       englishSummary: englishSummary?.summary ?? undefined,
       englishBullets: englishSummary?.bullets ?? [],
     } satisfies ContentDetailItem,
