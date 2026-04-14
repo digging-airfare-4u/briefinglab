@@ -2,7 +2,7 @@
 
 > A clean, summary-first AI news aggregator for builders — surfacing what people are building, thinking, and shipping.
 
-[English](#english) · [中文](#中文)
+[English](#english) · [中文](#中文) · [Live Demo](https://news.xmark.cloud)
 
 ---
 
@@ -11,6 +11,8 @@
 ### What is Briefinglab?
 
 **Briefinglab** is an AI-native content hub for builders. It collects tweets, podcasts, and blog posts from influential creators, normalizes them into a unified feed, and generates bilingual (EN/ZH) summaries so you can catch up on signal without the noise.
+
+**Live site:** [news.xmark.cloud](https://news.xmark.cloud)
 
 ### Features
 
@@ -85,6 +87,8 @@ ingest_runs          — Job history & stats
 ### Briefinglab 是什么？
 
 **Briefinglab（采集）** 是一个为 Builder 打造的 AI 原生内容聚合平台。系统自动抓取优质推文、播客和博客文章，统一整理成信息流，并生成中英文双语摘要，让你在无干扰的阅读体验中快速获取高价值信息。
+
+**在线体验：** [news.xmark.cloud](https://news.xmark.cloud)
 
 ### 功能特性
 
