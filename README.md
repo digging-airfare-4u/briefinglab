@@ -21,7 +21,7 @@ Briefinglab is an AI-native content aggregation platform that surfaces high-sign
 | Database | Supabase Postgres (with RLS) |
 | Auth | Supabase Auth |
 | Ingest | Node.js jobs (`tsx`), LLM-powered summarization |
-| Deployment | Vercel (frontend + functions), Supabase (database) |
+| Deployment | Vercel (frontend + functions), Supabase (database), GitHub Actions (scheduled jobs) |
 
 ### Features
 
@@ -143,6 +143,30 @@ LLM_MODEL=gpt-4o-mini
 INTERNAL_API_TOKEN=<any-random-string>
 ```
 
+#### Scheduled Jobs (GitHub Actions)
+
+Production scheduling is handled by GitHub Actions instead of Vercel Cron:
+
+- `Ingest Content` — runs daily at `00:05 UTC`
+- `Summarize Content` — runs every `30` minutes
+
+Add these repository secrets in GitHub:
+
+```
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+LLM_BASE_URL
+LLM_API_KEY
+LLM_MODEL
+```
+
+The workflows run these scripts directly:
+
+```bash
+npm run ingest:follow-builders
+npm run summaries:drain -- --limit=20 --max-batches=6
+```
+
 ### Database Schema
 
 ```
@@ -192,7 +216,8 @@ supabase/
 | `npm run seed:sources` | Seed default sources |
 | `npm run ingest:follow-builders` | Run builder feed ingest |
 | `npm run ingest:direct` | Run direct content ingest |
-| `npm run summaries:run` | Generate LLM summaries |
+| `npm run summaries:run` | Generate one summary batch |
+| `npm run summaries:drain` | Drain multiple summary batches until backlog drops |
 
 ---
 
@@ -211,7 +236,7 @@ Briefinglab（采集）是一个 AI 优先的内容聚合平台，汇聚 Builder
 | 数据库 | Supabase Postgres（含 RLS） |
 | 认证 | Supabase Auth |
 | 采集 | Node.js jobs (`tsx`)，LLM 摘要生成 |
-| 部署 | Vercel（前端+函数），Supabase（数据库） |
+| 部署 | Vercel（前端+函数），Supabase（数据库），GitHub Actions（定时任务） |
 
 ### 功能特性
 
@@ -333,6 +358,30 @@ LLM_MODEL=gpt-4o-mini
 INTERNAL_API_TOKEN=<任意随机字符串>
 ```
 
+#### 定时任务（GitHub Actions）
+
+生产环境的定时采集与摘要生成改由 GitHub Actions 执行，不再依赖 Vercel Cron：
+
+- `Ingest Content`：每天 `00:05 UTC` 运行一次采集
+- `Summarize Content`：每 `30` 分钟运行一次摘要补齐
+
+需要在 GitHub 仓库的 Secrets 中配置：
+
+```
+SUPABASE_URL
+SUPABASE_SERVICE_ROLE_KEY
+LLM_BASE_URL
+LLM_API_KEY
+LLM_MODEL
+```
+
+工作流直接执行这些脚本：
+
+```bash
+npm run ingest:follow-builders
+npm run summaries:drain -- --limit=20 --max-batches=6
+```
+
 ### 数据库结构
 
 ```
@@ -382,4 +431,5 @@ supabase/
 | `npm run seed:sources` | 初始化默认数据源 |
 | `npm run ingest:follow-builders` | 运行 Builder 信息流采集 |
 | `npm run ingest:direct` | 运行直接内容采集 |
-| `npm run summaries:run` | 为现有内容生成 LLM 摘要 |
+| `npm run summaries:run` | 运行一批摘要任务 |
+| `npm run summaries:drain` | 连续运行多批摘要任务，直到 backlog 明显下降 |
