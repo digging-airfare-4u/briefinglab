@@ -94,7 +94,7 @@ type SummaryClient = {
         column: string,
         options: { ascending: boolean }
       ): {
-        limit(count: number): PromiseLike<{
+        range(from: number, to: number): PromiseLike<{
           data: unknown[] | null
           error: { message: string } | null
         }>
@@ -174,12 +174,66 @@ type SummaryIndexRow = {
     | null
 }
 
+const SUMMARY_SCAN_PAGE_SIZE = 200
+const SUMMARY_SCAN_MAX_PAGES = 50
+
+function hasPendingEnrichment(row: SummaryIndexRow) {
+  const summaries = Array.isArray(row.content_summaries)
+    ? row.content_summaries
+    : row.content_summaries
+      ? [row.content_summaries]
+      : []
+  const translations = Array.isArray(row.content_translations)
+    ? row.content_translations
+    : row.content_translations
+      ? [row.content_translations]
+      : []
+  const body = firstRelation(row.content_bodies)
+  const mode = resolveSummaryEnrichmentMode({
+    kind: row.kind,
+    rawPayload:
+      typeof row.raw_payload === "object" && row.raw_payload ? row.raw_payload : {},
+    plainText: body?.plain_text ?? undefined,
+    transcriptText: body?.transcript_text ?? undefined,
+  })
+
+  return (
+    !hasSummaryLocale(summaries, "zh") ||
+    !hasTranslationLocale(translations, "zh") ||
+    (mode === "deep" && !hasSummaryLocale(summaries, "en"))
+  )
+}
+
+function mapPendingSummaryInput(row: SummaryIndexRow): PendingSummaryInput {
+  const creator = firstRelation(row.creators)
+  const source = firstRelation(row.sources)
+  const body = firstRelation(row.content_bodies)
+
+  return {
+    contentItemId: row.id,
+    slug: row.slug,
+    kind: row.kind,
+    title: row.title,
+    url: row.url,
+    publishedAt: row.published_at,
+    language: row.language ?? undefined,
+    rawPayload:
+      typeof row.raw_payload === "object" && row.raw_payload ? row.raw_payload : {},
+    plainText: body?.plain_text ?? undefined,
+    transcriptText: body?.transcript_text ?? undefined,
+    creatorName: creator?.display_name ?? source?.name ?? "Unknown creator",
+    creatorHandle: creator?.handle ?? undefined,
+    sourceName: source?.name ?? "Unknown source",
+    sourceUrl: source?.homepage_url ?? undefined,
+  } satisfies PendingSummaryInput
+}
+
 export function createSupabaseSummaryRepository(
   client: SummaryClient
 ): SummaryRepository {
   return {
     async listPendingSummaryInputs(limit = 20) {
-      const { data, error } = await client
+      const query = client
         .from("content_items")
         .select(`
           id,
@@ -196,71 +250,38 @@ export function createSupabaseSummaryRepository(
           content_summaries(locale),
           content_translations(locale)
         `)
-        .order("published_at", { ascending: false })
-        .limit(Math.max(limit * 4, limit))
+        .order("published_at", { ascending: true })
+      const pending: PendingSummaryInput[] = []
 
-      if (error) {
-        throw new Error(`content_items select failed: ${error.message}`)
+      for (let page = 0; page < SUMMARY_SCAN_MAX_PAGES; page += 1) {
+        const from = page * SUMMARY_SCAN_PAGE_SIZE
+        const to = from + SUMMARY_SCAN_PAGE_SIZE - 1
+        const { data, error } = await query.range(from, to)
+
+        if (error) {
+          throw new Error(`content_items select failed: ${error.message}`)
+        }
+
+        const rows = Array.isArray(data) ? (data as SummaryIndexRow[]) : []
+
+        for (const row of rows) {
+          if (!hasPendingEnrichment(row)) {
+            continue
+          }
+
+          pending.push(mapPendingSummaryInput(row))
+
+          if (pending.length >= limit) {
+            return pending
+          }
+        }
+
+        if (rows.length < SUMMARY_SCAN_PAGE_SIZE) {
+          break
+        }
       }
 
-      const rows = Array.isArray(data) ? (data as SummaryIndexRow[]) : []
-
-      return rows
-        .filter((row) => {
-          const summaries = Array.isArray(row.content_summaries)
-            ? row.content_summaries
-            : row.content_summaries
-              ? [row.content_summaries]
-              : []
-          const translations = Array.isArray(row.content_translations)
-            ? row.content_translations
-            : row.content_translations
-              ? [row.content_translations]
-              : []
-
-          const body = firstRelation(row.content_bodies)
-          const mode = resolveSummaryEnrichmentMode({
-            kind: row.kind,
-            rawPayload:
-              typeof row.raw_payload === "object" && row.raw_payload
-                ? row.raw_payload
-                : {},
-            plainText: body?.plain_text ?? undefined,
-            transcriptText: body?.transcript_text ?? undefined,
-          })
-
-          return (
-            !hasSummaryLocale(summaries, "zh") ||
-            !hasTranslationLocale(translations, "zh") ||
-            (mode === "deep" && !hasSummaryLocale(summaries, "en"))
-          )
-        })
-        .slice(0, limit)
-        .map((row) => {
-          const creator = firstRelation(row.creators)
-          const source = firstRelation(row.sources)
-          const body = firstRelation(row.content_bodies)
-
-          return {
-            contentItemId: row.id,
-            slug: row.slug,
-            kind: row.kind,
-            title: row.title,
-            url: row.url,
-            publishedAt: row.published_at,
-            language: row.language ?? undefined,
-            rawPayload:
-              typeof row.raw_payload === "object" && row.raw_payload
-                ? row.raw_payload
-                : {},
-            plainText: body?.plain_text ?? undefined,
-            transcriptText: body?.transcript_text ?? undefined,
-            creatorName: creator?.display_name ?? source?.name ?? "Unknown creator",
-            creatorHandle: creator?.handle ?? undefined,
-            sourceName: source?.name ?? "Unknown source",
-            sourceUrl: source?.homepage_url ?? undefined,
-          } satisfies PendingSummaryInput
-        })
+      return pending
     },
     async upsertSummary(summary) {
       const { data, error } = await client
@@ -332,7 +353,12 @@ export function createInMemorySummaryRepository(
 
   return {
     async listPendingSummaryInputs(limit = 20) {
-      return pending
+      return [...pending]
+        .sort((left, right) =>
+          left.publishedAt === right.publishedAt
+            ? left.slug.localeCompare(right.slug)
+            : left.publishedAt.localeCompare(right.publishedAt)
+        )
         .filter(
           (input) => {
             const mode = resolveSummaryEnrichmentMode(input)
