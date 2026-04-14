@@ -176,4 +176,58 @@ describe("summary service", () => {
     expect(secondRun.processed).toBe(0)
     expect(generator.generate).toHaveBeenCalledTimes(1)
   })
+
+  it("records enrichment timestamps for successful items", async () => {
+    const repository = createInMemorySummaryRepository([makePendingInput()])
+    const generator: SummaryGenerator = {
+      generate: vi.fn(async () => ({
+        summaries: [
+          {
+            locale: "zh" as const,
+            summary: "Summary",
+            bullets: [],
+            model: "test-generator",
+            status: "completed" as const,
+          },
+        ],
+        translations: [],
+      })),
+    }
+    const service = new SummaryService(repository, generator)
+
+    await service.runPending()
+
+    const state = repository.snapshot().enrichmentStates[0]
+
+    expect(state).toBeDefined()
+    expect(state.contentItemId).toBe("content-1")
+    expect(state.enrichmentAttemptedAt).toBeDefined()
+    expect(state.enrichedAt).toBeDefined()
+    expect(state.enrichmentError).toBeNull()
+  })
+
+  it("records enrichment error for failed items", async () => {
+    const repository = createInMemorySummaryRepository([
+      makePendingInput({ contentItemId: "content-fail", slug: "tweet-fail" }),
+    ])
+    const generator: SummaryGenerator = {
+      generate: vi.fn(async () => {
+        throw new Error("generation failed")
+      }),
+    }
+    const service = new SummaryService(repository, generator)
+
+    const result = await service.runPending()
+
+    expect(result.failed).toBe(1)
+
+    const state = repository
+      .snapshot()
+      .enrichmentStates.find((s) => s.contentItemId === "content-fail")
+
+    expect(state).toBeDefined()
+    expect(state!.enrichmentAttemptedAt).toBeDefined()
+    expect(state!.enrichmentError).toBe("generation failed")
+    expect(state!.enrichedAt).toBeUndefined()
+  })
 })

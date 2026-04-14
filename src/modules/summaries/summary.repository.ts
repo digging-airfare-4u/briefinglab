@@ -77,6 +77,11 @@ export interface SummaryRepository {
   upsertTranslation(
     translation: Omit<ContentTranslationRecord, "id">
   ): Promise<ContentTranslationRecord>
+  markEnrichmentAttempted(contentItemId: string): Promise<void>
+  markEnrichmentResult(
+    contentItemId: string,
+    error?: string | null
+  ): Promise<void>
 }
 
 function firstRelation<T>(value: T | T[] | null | undefined) {
@@ -111,6 +116,11 @@ type SummaryClient = {
           error: { message: string } | null
         }>
       }
+    }
+    update(payload: unknown): {
+      eq(column: string, value: string): PromiseLike<{
+        error: { message: string } | null
+      }>
     }
   }
 }
@@ -336,7 +346,50 @@ export function createSupabaseSummaryRepository(
         ...translation,
       } satisfies ContentTranslationRecord
     },
+    async markEnrichmentAttempted(contentItemId) {
+      const { error } = await client
+        .from("content_items")
+        .update({
+          enrichment_attempted_at: new Date().toISOString(),
+          enrichment_error: null,
+        })
+        .eq("id", contentItemId)
+
+      if (error) {
+        throw new Error(
+          `content_items markEnrichmentAttempted failed: ${error.message}`
+        )
+      }
+    },
+    async markEnrichmentResult(contentItemId, errorText) {
+      const { error } = await client
+        .from("content_items")
+        .update(
+          errorText
+            ? {
+                enrichment_error: errorText,
+              }
+            : {
+                enriched_at: new Date().toISOString(),
+                enrichment_error: null,
+              }
+        )
+        .eq("id", contentItemId)
+
+      if (error) {
+        throw new Error(
+          `content_items markEnrichmentResult failed: ${error.message}`
+        )
+      }
+    },
   }
+}
+
+export type EnrichmentState = {
+  contentItemId: string
+  enrichmentAttemptedAt?: string
+  enrichedAt?: string
+  enrichmentError?: string | null
 }
 
 export function createInMemorySummaryRepository(
@@ -345,11 +398,21 @@ export function createInMemorySummaryRepository(
   snapshot(): {
     summaries: ContentSummaryRecord[]
     translations: ContentTranslationRecord[]
+    enrichmentStates: EnrichmentState[]
   }
 } {
   const pending = [...inputs]
   const summaries: ContentSummaryRecord[] = []
   const translations: ContentTranslationRecord[] = []
+  const enrichmentStates = new Map<string, EnrichmentState>()
+
+  function getEnrichmentState(contentItemId: string): EnrichmentState {
+    if (!enrichmentStates.has(contentItemId)) {
+      enrichmentStates.set(contentItemId, { contentItemId })
+    }
+
+    return enrichmentStates.get(contentItemId)!
+  }
 
   return {
     async listPendingSummaryInputs(limit = 20) {
@@ -423,10 +486,27 @@ export function createInMemorySummaryRepository(
       translations.push(next)
       return next
     },
+    async markEnrichmentAttempted(contentItemId) {
+      const state = getEnrichmentState(contentItemId)
+
+      state.enrichmentAttemptedAt = new Date().toISOString()
+      state.enrichmentError = null
+    },
+    async markEnrichmentResult(contentItemId, errorText) {
+      const state = getEnrichmentState(contentItemId)
+
+      if (errorText) {
+        state.enrichmentError = errorText
+      } else {
+        state.enrichedAt = new Date().toISOString()
+        state.enrichmentError = null
+      }
+    },
     snapshot() {
       return {
         summaries: [...summaries],
         translations: [...translations],
+        enrichmentStates: Array.from(enrichmentStates.values()),
       }
     },
   }

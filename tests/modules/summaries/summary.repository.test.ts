@@ -42,8 +42,10 @@ function makeSummaryRow(index: number, overrides: Record<string, unknown> = {}) 
 
 function createFakeSummaryClient(rows: Array<Record<string, unknown>>) {
   const calls: Array<{ from: number; to: number }> = []
+  const updates: Array<{ table: string; payload: unknown; eq: { column: string; value: string } }> =
+    []
   const client: Parameters<typeof createSupabaseSummaryRepository>[0] = {
-    from() {
+    from(table) {
       return {
         select() {
           return {
@@ -88,11 +90,19 @@ function createFakeSummaryClient(rows: Array<Record<string, unknown>>) {
             },
           }
         },
+        update(payload) {
+          return {
+            eq(column, value) {
+              updates.push({ table, payload, eq: { column, value } })
+              return Promise.resolve({ error: null })
+            },
+          }
+        },
       }
     },
   }
 
-  return { client, calls }
+  return { client, calls, updates }
 }
 
 describe("summary repository", () => {
@@ -124,5 +134,52 @@ describe("summary repository", () => {
       "tweet-200",
       "tweet-201",
     ])
+  })
+
+  it("marks enrichment attempted on the content item", async () => {
+    const rows = [makeSummaryRow(1)]
+    const { client, updates } = createFakeSummaryClient(rows)
+    const repository = createSupabaseSummaryRepository(client)
+
+    await repository.markEnrichmentAttempted("content-1")
+
+    expect(updates).toHaveLength(1)
+    expect(updates[0].table).toBe("content_items")
+    expect(updates[0].eq).toEqual({ column: "id", value: "content-1" })
+    expect(updates[0].payload).toMatchObject({
+      enrichment_attempted_at: expect.any(String),
+      enrichment_error: null,
+    })
+  })
+
+  it("marks enrichment success on the content item", async () => {
+    const rows = [makeSummaryRow(1)]
+    const { client, updates } = createFakeSummaryClient(rows)
+    const repository = createSupabaseSummaryRepository(client)
+
+    await repository.markEnrichmentResult("content-1", null)
+
+    expect(updates).toHaveLength(1)
+    expect(updates[0].table).toBe("content_items")
+    expect(updates[0].eq).toEqual({ column: "id", value: "content-1" })
+    expect(updates[0].payload).toMatchObject({
+      enriched_at: expect.any(String),
+      enrichment_error: null,
+    })
+  })
+
+  it("marks enrichment failure on the content item", async () => {
+    const rows = [makeSummaryRow(1)]
+    const { client, updates } = createFakeSummaryClient(rows)
+    const repository = createSupabaseSummaryRepository(client)
+
+    await repository.markEnrichmentResult("content-1", "model timeout")
+
+    expect(updates).toHaveLength(1)
+    expect(updates[0].table).toBe("content_items")
+    expect(updates[0].eq).toEqual({ column: "id", value: "content-1" })
+    expect(updates[0].payload).toEqual({
+      enrichment_error: "model timeout",
+    })
   })
 })

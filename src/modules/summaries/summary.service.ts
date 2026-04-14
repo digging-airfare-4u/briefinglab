@@ -203,6 +203,7 @@ export class SummaryService {
 
     for (const input of inputs) {
       try {
+        await this.repository.markEnrichmentAttempted(input.contentItemId)
         const generated = await this.generator.generate(input)
 
         for (const summary of generated.summaries) {
@@ -220,12 +221,20 @@ export class SummaryService {
           })
           created += 1
         }
+
+        await this.repository.markEnrichmentResult(input.contentItemId, null)
       } catch (error) {
         failed += 1
+        const message = error instanceof Error ? error.message : String(error)
         errors.push({
           contentItemId: input.contentItemId,
-          message: error instanceof Error ? error.message : String(error),
+          message,
         })
+        try {
+          await this.repository.markEnrichmentResult(input.contentItemId, message)
+        } catch {
+          // ignore follow-up errors when marking result
+        }
       }
     }
 
