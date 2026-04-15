@@ -18,11 +18,11 @@ jobs:
     environment: production
     timeout-minutes: 20
     env:
-      SUPABASE_URL: ${{ vars.SUPABASE_URL || secrets.SUPABASE_URL }}
-      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-      LLM_BASE_URL: ${{ vars.LLM_BASE_URL || secrets.LLM_BASE_URL }}
-      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
-      LLM_MODEL: ${{ vars.LLM_MODEL || secrets.LLM_MODEL }}
+      SUPABASE_URL: ${{ vars.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ vars.SUPABASE_SERVICE_ROLE_KEY }}
+      LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+      LLM_API_KEY: ${{ vars.LLM_API_KEY }}
+      LLM_MODEL: ${{ vars.LLM_MODEL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
