@@ -1,3 +1,4 @@
+import { getSupabaseAdminClient } from "@/lib/supabase-admin"
 import {
   getPublicContentDetail,
   listPublicFeedItems,
@@ -12,12 +13,51 @@ import {
   type ContentDetailItem,
   type ContentGroup,
   type ContentListItem,
+  type DailySummaryViewModel,
 } from "@/modules/content/public-content.view-model"
 import {
   listObservedSourceDirectoryItems,
   listSourceDirectoryItems,
   type SourceDirectoryItem,
 } from "@/modules/sources/source-directory"
+import {
+  createSupabaseDailySummaryRepository,
+  type DailySummaryRecord,
+} from "@/modules/summaries/daily-summary.repository"
+
+function toDailySummaryViewModel(
+  record: DailySummaryRecord
+): DailySummaryViewModel {
+  return {
+    summary: record.summary,
+    bullets: record.bullets,
+    highlights: record.highlights,
+  }
+}
+
+async function fetchDailySummariesForItems(items: ContentListItem[]) {
+  const dates = Array.from(new Set(items.map((item) => item.publishedAt.slice(0, 10))))
+  if (dates.length === 0) return {}
+
+  try {
+    const repository = createSupabaseDailySummaryRepository(
+      getSupabaseAdminClient() as unknown as Parameters<
+        typeof createSupabaseDailySummaryRepository
+      >[0]
+    )
+
+    const records = await repository.listByDates(dates)
+    const map: Record<string, DailySummaryViewModel> = {}
+
+    for (const record of records) {
+      map[record.date] = toDailySummaryViewModel(record)
+    }
+
+    return map
+  } catch {
+    return {}
+  }
+}
 
 function toContentListItem(item: PublicFeedItem): ContentListItem {
   const legacyUrl =
@@ -83,6 +123,7 @@ export async function getHomePageData(): Promise<{
   items: ContentListItem[]
   categories: CategoryOption[]
   sources: SourceDirectoryItem[]
+  dailySummaries: Record<string, DailySummaryViewModel>
 }> {
   const items = (await listPublicFeedItems()).map(toContentListItem)
   const sources = listObservedSourceDirectoryItems(
@@ -98,6 +139,7 @@ export async function getHomePageData(): Promise<{
     items,
     categories: buildCategoryOptions(items),
     sources: sources.length > 0 ? sources : listSourceDirectoryItems(),
+    dailySummaries: await fetchDailySummariesForItems(items),
   }
 }
 
@@ -107,7 +149,7 @@ export async function getLatestPageData(): Promise<{
   const items = (await listPublicFeedItems()).map(toContentListItem)
 
   return {
-    groups: groupContentItems(items),
+    groups: groupContentItems(items, await fetchDailySummariesForItems(items)),
   }
 }
 

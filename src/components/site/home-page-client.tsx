@@ -4,6 +4,7 @@ import * as React from "react"
 import { ArrowUpRight } from "lucide-react"
 
 import { CategorySidebar } from "@/components/site/category-sidebar"
+import { DailySummaryCard } from "@/components/site/daily-summary-card"
 import { DateGroupHeading } from "@/components/site/date-group-heading"
 import {
   DigestContentCard,
@@ -29,6 +30,7 @@ import {
   type CategoryFilter,
   type CategoryOption,
   type ContentListItem,
+  type DailySummaryViewModel,
 } from "@/modules/content/public-content.view-model"
 import { type SourceDirectoryItem } from "@/modules/sources/source-directory"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -49,10 +51,12 @@ export function HomePageClient({
   initialItems,
   categories,
   sources = [],
+  dailySummaries = {},
 }: {
   initialItems: ContentListItem[]
   categories: CategoryOption[]
   sources?: SourceDirectoryItem[]
+  dailySummaries?: Record<string, DailySummaryViewModel>
 }) {
   const [activeCategory, setActiveCategory] = React.useState<CategoryFilter>("all")
   const [showAllSources, setShowAllSources] = React.useState(false)
@@ -62,8 +66,8 @@ export function HomePageClient({
     [activeCategory, initialItems]
   )
   const dateGroups = React.useMemo(
-    () => groupContentItems(filteredItems),
-    [filteredItems]
+    () => groupContentItems(filteredItems, dailySummaries),
+    [filteredItems, dailySummaries]
   )
   const marqueeSources = React.useMemo(
     () => (sources.length > 1 ? [...sources, ...sources] : sources),
@@ -315,6 +319,12 @@ export function HomePageClient({
                       <DateGroupHeading label={group.label} count={group.items.length} />
                     </div>
                   </RevealOnScroll>
+
+                  {group.dailySummary ? (
+                    <RevealOnScroll delay={groupIndex * 80 + 40}>
+                      <DailySummaryCard summary={group.dailySummary} />
+                    </RevealOnScroll>
+                  ) : null}
 
                   <div className="grid gap-5 md:grid-cols-2">
                     {group.items.map((item, itemIndex) => {

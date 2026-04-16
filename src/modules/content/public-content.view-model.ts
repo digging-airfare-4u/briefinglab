@@ -47,10 +47,17 @@ export type ContentDetailItem = ContentListItem & {
   englishBullets?: string[]
 }
 
+export type DailySummaryViewModel = {
+  summary: string
+  bullets: string[]
+  highlights: string[]
+}
+
 export type ContentGroup = {
   key: string
   label: string
   items: ContentListItem[]
+  dailySummary?: DailySummaryViewModel
 }
 
 export type CategoryOption = {
@@ -115,7 +122,10 @@ export function filterContentItems(
     : items.filter((item) => item.category === category)
 }
 
-export function groupContentItems(items: ContentListItem[]): ContentGroup[] {
+export function groupContentItems(
+  items: ContentListItem[],
+  dailySummaries: Record<string, DailySummaryViewModel> = {}
+): ContentGroup[] {
   const groups = new Map<string, ContentListItem[]>()
 
   for (const item of items) {
@@ -131,5 +141,6 @@ export function groupContentItems(items: ContentListItem[]): ContentGroup[] {
       items: [...group].sort((left, right) =>
         left.publishedAt < right.publishedAt ? 1 : -1
       ),
+      dailySummary: dailySummaries[key],
     }))
 }

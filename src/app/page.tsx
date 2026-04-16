@@ -11,6 +11,7 @@ export default async function Home() {
       initialItems={data.items}
       categories={data.categories}
       sources={data.sources}
+      dailySummaries={data.dailySummaries}
     />
   )
 }
