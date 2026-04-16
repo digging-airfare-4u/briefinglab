@@ -13,7 +13,8 @@
     "ingest:follow-builders": "tsx src/jobs/run-follow-builders-ingest.ts",
     "ingest:direct": "tsx src/jobs/run-direct-ingest.ts",
     "summaries:run": "tsx src/jobs/run-summary-jobs.ts",
-    "summaries:drain": "tsx src/jobs/run-summary-backlog.ts"
+    "summaries:drain": "tsx src/jobs/run-summary-backlog.ts",
+    "daily-summaries:run": "tsx src/jobs/run-daily-summary-jobs.ts"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",
