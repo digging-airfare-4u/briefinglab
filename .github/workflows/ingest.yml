@@ -2,7 +2,7 @@ name: Ingest Content
 
 on:
   schedule:
-    - cron: "5 0 * * *"
+    - cron: "30 8 * * *"
   workflow_dispatch:
 
 concurrency:
@@ -41,3 +41,6 @@ jobs:
 
       - name: Drain summaries after ingest
         run: npm run summaries:drain -- --limit=20 --max-batches=4
+
+      - name: Generate daily summaries
+        run: npm run daily-summaries:run
