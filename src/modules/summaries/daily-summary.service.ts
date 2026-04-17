@@ -31,7 +31,7 @@ function buildPrompt(date: string, items: DailySummaryItem[]) {
     "Rules:",
     "- summary: a 100-180 character overview of the day's AI news and articles. Warm, journalistic tone.",
     "- bullets: 2-4 short bullet points summarizing major themes or trends across the day.",
-    "- highlights: 2-3 one-sentence highlights of the most notable individual items.",
+    "- highlights: 2-3 one-sentence highlights of the most notable individual items. Write complete sentences; do not end with '...' or '…'.",
     "- All output must be in Simplified Chinese.",
     "- Keep facts faithful. Do not invent information.",
     `date: ${date}`,
@@ -89,15 +89,21 @@ function parseJsonPayload(content: string): unknown {
 
 function asStringArray(value: unknown) {
   return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    ? value
+        .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+        .map((item) => stripTrailingEllipsis(item))
     : []
+}
+
+function stripTrailingEllipsis(value: string) {
+  return value.replace(/[.]{3}$/, "").replace(/…$/, "").trim()
 }
 
 function requireString(value: unknown, field: string) {
   if (typeof value !== "string" || value.trim().length === 0) {
     throw new Error(`Missing or invalid field from LLM response: ${field}`)
   }
-  return value.trim()
+  return stripTrailingEllipsis(value.trim())
 }
 
 export function createOpenAICompatibleDailySummaryGenerator(
