@@ -3,9 +3,9 @@
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 
-import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 
-const CLOSE_ANIMATION_MS = 200
+const CLOSE_ANIMATION_MS = 100
 
 export function DetailModal({
   title,
@@ -24,14 +24,11 @@ export function DetailModal({
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-full overflow-y-auto p-0 sm:max-w-xl"
-      >
-        <SheetTitle className="sr-only">{title}</SheetTitle>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-h-[85vh] w-full overflow-y-auto p-0 sm:max-w-2xl">
+        <DialogTitle className="sr-only">{title}</DialogTitle>
         {children}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
