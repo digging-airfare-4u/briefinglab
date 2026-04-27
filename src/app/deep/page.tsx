@@ -1,16 +1,12 @@
-import {
-  DigestContentCard,
-  StandardContentCard,
-} from "@/components/site/content-card"
+import { DeepPageClient } from "@/components/site/deep-page-client"
 import { SiteHeader } from "@/components/site/site-header"
 import { getDeepPageData } from "@/modules/content/public-content.adapter"
 import { Badge } from "@/components/ui/badge"
-import { Separator } from "@/components/ui/separator"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export default async function DeepPage() {
-  const { leadItem, items } = await getDeepPageData()
+  const data = await getDeepPageData()
 
   return (
     <div className="min-h-screen">
@@ -28,28 +24,11 @@ export default async function DeepPage() {
           </p>
         </section>
 
-        {leadItem ? <DigestContentCard item={leadItem} /> : null}
-
-        <section className="space-y-4">
-          <div className="flex items-center gap-4">
-            <h2 className="font-heading text-xl font-semibold tracking-tight text-foreground">
-              延伸阅读
-            </h2>
-            <Separator className="flex-1" />
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            {items.map((item) =>
-              item.cardType === "digest" ? (
-                <div key={item.slug} className="md:col-span-2">
-                  <DigestContentCard item={item} />
-                </div>
-              ) : (
-                <StandardContentCard key={item.slug} item={item} />
-              )
-            )}
-          </div>
-        </section>
+        <DeepPageClient
+          initialItems={data.items}
+          initialCursor={data.nextCursor}
+          initialHasMore={data.hasMore}
+        />
       </main>
     </div>
   )

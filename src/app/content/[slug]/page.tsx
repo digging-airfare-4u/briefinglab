@@ -3,7 +3,7 @@ import { notFound } from "next/navigation"
 import { DetailPage } from "@/components/site/detail-page"
 import { getContentDetailPageData } from "@/modules/content/public-content.adapter"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export default async function ContentDetailPage({
   params,

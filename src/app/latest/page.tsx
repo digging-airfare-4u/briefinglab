@@ -1,16 +1,12 @@
-import { DateGroupHeading } from "@/components/site/date-group-heading"
-import {
-  DigestContentCard,
-  StandardContentCard,
-} from "@/components/site/content-card"
+import { LatestPageClient } from "@/components/site/latest-page-client"
 import { SiteHeader } from "@/components/site/site-header"
 import { getLatestPageData } from "@/modules/content/public-content.adapter"
 import { Badge } from "@/components/ui/badge"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export default async function LatestPage() {
-  const { groups } = await getLatestPageData()
+  const data = await getLatestPageData()
 
   return (
     <div className="min-h-screen">
@@ -28,22 +24,12 @@ export default async function LatestPage() {
           </p>
         </section>
 
-        {groups.map((group) => (
-          <section key={group.key} className="space-y-4">
-            <DateGroupHeading label={group.label} count={group.items.length} />
-            <div className="grid gap-4 md:grid-cols-2">
-              {group.items.map((item) =>
-                item.cardType === "digest" ? (
-                  <div key={item.slug} className="md:col-span-2">
-                    <DigestContentCard item={item} />
-                  </div>
-                ) : (
-                  <StandardContentCard key={item.slug} item={item} />
-                )
-              )}
-            </div>
-          </section>
-        ))}
+        <LatestPageClient
+          initialItems={data.items}
+          dailySummaries={data.dailySummaries}
+          initialCursor={data.nextCursor}
+          initialHasMore={data.hasMore}
+        />
       </main>
     </div>
   )

@@ -4,7 +4,7 @@ import { DetailModal } from "@/components/site/detail-modal"
 import { DetailPreview } from "@/components/site/detail-preview"
 import { getContentDetailPageData } from "@/modules/content/public-content.adapter"
 
-export const dynamic = "force-dynamic"
+export const revalidate = 300
 
 export default async function ContentDetailModalPage({
   params,
