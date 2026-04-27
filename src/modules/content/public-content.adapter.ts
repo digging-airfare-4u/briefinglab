@@ -1,22 +1,18 @@
 import { getSupabaseAdminClient } from "@/lib/supabase-admin"
 import {
   getPublicContentDetail,
-  listPublicFeedItems,
+  getPublicFeed,
   type PublicContentDetail,
   type PublicFeedItem,
 } from "@/modules/content/public-content.service"
 import { resolveDetailMode } from "@/modules/content/content-complexity"
 import {
-  buildCategoryOptions,
-  groupContentItems,
   type CategoryOption,
   type ContentDetailItem,
-  type ContentGroup,
   type ContentListItem,
   type DailySummaryViewModel,
 } from "@/modules/content/public-content.view-model"
 import {
-  listObservedSourceDirectoryItems,
   listSourceDirectoryItems,
   type SourceDirectoryItem,
 } from "@/modules/sources/source-directory"
@@ -38,6 +34,33 @@ function toDailySummaryViewModel(
 async function fetchDailySummariesForItems(items: ContentListItem[]) {
   const dates = Array.from(new Set(items.map((item) => item.publishedAt.slice(0, 10))))
   if (dates.length === 0) return {}
+
+  try {
+    const repository = createSupabaseDailySummaryRepository(
+      getSupabaseAdminClient() as unknown as Parameters<
+        typeof createSupabaseDailySummaryRepository
+      >[0]
+    )
+
+    const records = await repository.listByDates(dates)
+    const map: Record<string, DailySummaryViewModel> = {}
+
+    for (const record of records) {
+      map[record.date] = toDailySummaryViewModel(record)
+    }
+
+    return map
+  } catch {
+    return {}
+  }
+}
+
+async function fetchRecentDailySummaries(dayCount = 30) {
+  const dates = Array.from({ length: dayCount }, (_, i) => {
+    const d = new Date()
+    d.setDate(d.getDate() - i)
+    return d.toISOString().slice(0, 10)
+  })
 
   try {
     const repository = createSupabaseDailySummaryRepository(
@@ -119,53 +142,70 @@ function toDetailPageData(item: PublicContentDetail) {
   }
 }
 
+const INITIAL_PAGE_SIZE = 20
+
 export async function getHomePageData(): Promise<{
   items: ContentListItem[]
   categories: CategoryOption[]
   sources: SourceDirectoryItem[]
   dailySummaries: Record<string, DailySummaryViewModel>
+  nextCursor: string | null
+  hasMore: boolean
 }> {
-  const items = (await listPublicFeedItems()).map(toContentListItem)
-  const sources = listObservedSourceDirectoryItems(
-    items.map((item) => ({
-      sourceName: item.sourceName,
-      sourceUrl: item.sourceUrl,
-      creatorHandle: item.creatorHandle,
-      kind: item.kind,
-    }))
+  const feed = await getPublicFeed({ limit: INITIAL_PAGE_SIZE })
+  const items = feed.groups.flatMap((group) =>
+    group.items.map(toContentListItem)
   )
+  const categories: CategoryOption[] = [
+    { id: "all", label: "全部内容", description: "今日所有 AI 动向", count: feed.filters.counts.all },
+    { id: "article", label: "文章", description: "播客、博客、日报与长文解读", count: feed.filters.counts.article },
+    { id: "news", label: "动态", description: "X 快讯、发布与行业变化", count: feed.filters.counts.news },
+  ]
+  const sources = listSourceDirectoryItems()
 
   return {
     items,
-    categories: buildCategoryOptions(items),
-    sources: sources.length > 0 ? sources : listSourceDirectoryItems(),
-    dailySummaries: await fetchDailySummariesForItems(items),
+    categories,
+    sources,
+    dailySummaries: await fetchRecentDailySummaries(),
+    nextCursor: feed.pagination.nextCursor,
+    hasMore: feed.pagination.hasMore,
   }
 }
 
 export async function getLatestPageData(): Promise<{
-  groups: ContentGroup[]
+  items: ContentListItem[]
+  dailySummaries: Record<string, DailySummaryViewModel>
+  nextCursor: string | null
+  hasMore: boolean
 }> {
-  const items = (await listPublicFeedItems()).map(toContentListItem)
+  const feed = await getPublicFeed({ limit: INITIAL_PAGE_SIZE })
+  const items = feed.groups.flatMap((group) =>
+    group.items.map(toContentListItem)
+  )
 
   return {
-    groups: groupContentItems(items, await fetchDailySummariesForItems(items)),
+    items,
+    dailySummaries: await fetchRecentDailySummaries(),
+    nextCursor: feed.pagination.nextCursor,
+    hasMore: feed.pagination.hasMore,
   }
 }
 
 export async function getDeepPageData(): Promise<{
-  leadItem: ContentListItem | null
   items: ContentListItem[]
+  nextCursor: string | null
+  hasMore: boolean
 }> {
-  const items = (await listPublicFeedItems())
-    .map(toContentListItem)
-    .filter((item) => item.cardType === "digest" || item.category === "article")
-
-  const [leadItem, ...rest] = items
+  const feed = await getPublicFeed({ limit: INITIAL_PAGE_SIZE, category: "article" })
+  const items = feed.groups.flatMap((group) =>
+    group.items.map(toContentListItem)
+  )
 
   return {
-    leadItem: leadItem ?? null,
-    items: rest,
+    items,
+    nextCursor: feed.pagination.nextCursor,
+    hasMore: feed.pagination.hasMore,
   }
 }
 

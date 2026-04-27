@@ -144,3 +144,59 @@ export function groupContentItems(
       dailySummary: dailySummaries[key],
     }))
 }
+
+export type FeedApiItem = {
+  id: string
+  slug: string
+  kind: ContentKind
+  category: ContentCategory
+  cardType: CardType
+  title: string | null
+  contentUrl: string
+  excerpt: string
+  summary: { text: string; bullets: string[]; isFallback: boolean }
+  creator: { name: string; handle?: string }
+  source: { name: string; url: string }
+  publishedAt: string
+  readTime: string
+  badges: string[]
+  editorialTake?: string
+}
+
+export type FeedApiResponse = {
+  groups: Array<{ key: string; label: string; items: FeedApiItem[] }>
+  filters: {
+    category: CategoryFilter
+    source: string | null
+    counts: Record<CategoryFilter, number>
+  }
+  pagination: {
+    limit: number
+    nextCursor: string | null
+    hasMore: boolean
+  }
+}
+
+export function feedItemToContentListItem(item: FeedApiItem): ContentListItem {
+  return {
+    id: item.id,
+    slug: item.slug,
+    kind: item.kind,
+    title: item.title ?? "",
+    contentUrl: item.contentUrl,
+    excerpt: item.excerpt,
+    summary: item.summary.text,
+    bullets: item.summary.bullets,
+    hasSummary: !item.summary.isFallback,
+    editorialTake: item.editorialTake,
+    category: item.category,
+    cardType: item.cardType,
+    sourceName: item.source.name,
+    sourceUrl: item.source.url,
+    creatorName: item.creator.name,
+    creatorHandle: item.creator.handle ?? "",
+    publishedAt: item.publishedAt,
+    readTime: item.readTime,
+    badges: item.badges,
+  }
+}

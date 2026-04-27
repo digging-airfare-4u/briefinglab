@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
-const getPublicFeed = vi.fn(async ({ category }: { category?: string } = {}) => {
+const { getPublicFeed } = vi.hoisted(() => ({
+  getPublicFeed: vi.fn(async ({ category }: { category?: string } = {}) => {
   if (category === "news") {
     return {
       groups: [
@@ -88,7 +89,8 @@ const getPublicFeed = vi.fn(async ({ category }: { category?: string } = {}) => 
     },
     pagination: { limit: 50, nextCursor: null, hasMore: false },
   }
-})
+  }),
+}))
 
 vi.mock("@/modules/content/public-content.service", () => ({
   getPublicFeed,

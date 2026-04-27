@@ -138,6 +138,8 @@ describe("HomePageClient", () => {
             href: "https://every.to/ai-and-i",
           },
         ],
+        initialCursor: null,
+        initialHasMore: false,
       })
     )
 

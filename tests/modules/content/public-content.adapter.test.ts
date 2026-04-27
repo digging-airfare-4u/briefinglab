@@ -3,101 +3,131 @@ import path from "node:path"
 
 import { describe, expect, it, vi } from "vitest"
 
-vi.mock("@/modules/content/public-content.service", () => ({
-  listPublicFeedItems: vi.fn(async () => [
-    {
-      id: "blog-1",
-      slug: "blog-1",
-      category: "article",
-      cardType: "digest",
-      title: "Why execution loops matter",
-      excerpt: "Execution loops make agent products more reliable.",
-      summary: {
+const feedItems = [
+  {
+    id: "blog-1",
+    slug: "blog-1",
+    category: "article",
+    cardType: "digest",
+    title: "Why execution loops matter",
+    contentUrl: "https://example.com/blog-1",
+    excerpt: "Execution loops make agent products more reliable.",
+    summary: {
+      locale: "zh",
+      text: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
+      bullets: ["可恢复", "可检查", "可继续执行"],
+      isFallback: false,
+    },
+    summaries: {
+      zh: {
         locale: "zh",
-        text: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
+        summary: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
         bullets: ["可恢复", "可检查", "可继续执行"],
         isFallback: false,
       },
-      summaries: {
-        zh: {
-          locale: "zh",
-          summary: "这篇文章解释了为什么执行回路会让 agent 产品更可靠。",
-          bullets: ["可恢复", "可检查", "可继续执行"],
-          isFallback: false,
-        },
-        en: {
-          locale: "en",
-          summary: "Execution loops make agent products more reliable.",
-          bullets: ["Resume", "Inspect", "Continue"],
-          isFallback: false,
-        },
+      en: {
+        locale: "en",
+        summary: "Execution loops make agent products more reliable.",
+        bullets: ["Resume", "Inspect", "Continue"],
+        isFallback: false,
       },
-      body: {
-        original: {
-          locale: "en",
-          title: "Why execution loops matter",
-          text: "Execution loops make agent products more reliable.",
-        },
-        translation: {
-          locale: "zh",
-          title: "为什么执行回路很重要",
-          text: "执行回路会让 agent 产品更可靠。",
-        },
-      },
-      creator: {
-        name: "Latent Space",
-        handle: "latentspace",
-      },
-      source: {
-        name: "Latent Space",
-        url: "https://example.com",
-      },
-      publishedAt: "2026-04-06T08:10:00.000Z",
-      readTime: "3 分钟摘要",
-      badges: ["文章", "中文摘要"],
     },
-    {
-      id: "tweet-1",
-      slug: "tweet-1",
-      category: "news",
-      cardType: "standard",
-      title: null,
-      excerpt: "Codex now supports longer-running engineering tasks.",
-      summary: {
+    body: {
+      original: {
+        locale: "en",
+        title: "Why execution loops matter",
+        text: "Execution loops make agent products more reliable.",
+      },
+      translation: {
         locale: "zh",
-        text: "Codex 正在支持更长的工程执行链路。",
+        title: "为什么执行回路很重要",
+        text: "执行回路会让 agent 产品更可靠。",
+      },
+    },
+    creator: {
+      name: "Latent Space",
+      handle: "latentspace",
+    },
+    source: {
+      name: "Latent Space",
+      url: "https://example.com",
+    },
+    publishedAt: "2026-04-06T08:10:00.000Z",
+    readTime: "3 分钟摘要",
+    badges: ["文章", "中文摘要"],
+  },
+  {
+    id: "tweet-1",
+    slug: "tweet-1",
+    category: "news",
+    cardType: "standard",
+    title: null,
+    contentUrl: "https://x.com/karpathy/status/1",
+    excerpt: "Codex now supports longer-running engineering tasks.",
+    summary: {
+      locale: "zh",
+      text: "Codex 正在支持更长的工程执行链路。",
+      bullets: ["长任务", "可恢复"],
+      isFallback: false,
+    },
+    summaries: {
+      zh: {
+        locale: "zh",
+        summary: "Codex 正在支持更长的工程执行链路。",
         bullets: ["长任务", "可恢复"],
         isFallback: false,
       },
-      summaries: {
-        zh: {
-          locale: "zh",
-          summary: "Codex 正在支持更长的工程执行链路。",
-          bullets: ["长任务", "可恢复"],
-          isFallback: false,
-        },
-      },
-      body: {
-        original: {
-          locale: "en",
-          title: null,
-          text: "Codex now supports longer-running engineering tasks.",
-        },
-        translation: null,
-      },
-      creator: {
-        name: "Andrej Karpathy",
-        handle: "karpathy",
-      },
-      source: {
-        name: "X / Andrej Karpathy",
-        url: "https://x.com/karpathy",
-      },
-      publishedAt: "2026-04-06T09:10:00.000Z",
-      readTime: "1 分钟",
-      badges: ["动态", "中文摘要"],
     },
-  ]),
+    body: {
+      original: {
+        locale: "en",
+        title: null,
+        text: "Codex now supports longer-running engineering tasks.",
+      },
+      translation: null,
+    },
+    creator: {
+      name: "Andrej Karpathy",
+      handle: "karpathy",
+    },
+    source: {
+      name: "X / Andrej Karpathy",
+      url: "https://x.com/karpathy",
+    },
+    publishedAt: "2026-04-06T09:10:00.000Z",
+    readTime: "1 分钟",
+    badges: ["动态", "中文摘要"],
+  },
+]
+
+vi.mock("@/modules/content/public-content.service", () => ({
+  listPublicFeedItems: vi.fn(async () => feedItems),
+  getPublicFeed: vi.fn(async (query: { category?: string; limit?: number } = {}) => {
+    const filtered =
+      query.category && query.category !== "all"
+        ? feedItems.filter((item) => item.category === query.category)
+        : feedItems
+    const sorted = [...filtered].sort((a, b) =>
+      a.publishedAt < b.publishedAt ? 1 : -1
+    )
+    return {
+      groups: [{ key: "2026-04-06", label: "4月6日 周一", items: sorted }],
+      filters: {
+        category: query.category ?? "all",
+        source: null,
+        counts: {
+          all: feedItems.length,
+          article: feedItems.filter((i) => i.category === "article").length,
+          news: feedItems.filter((i) => i.category === "news").length,
+        },
+      },
+      pagination: {
+        limit: query.limit ?? 10,
+        nextCursor: null,
+        hasMore: false,
+      },
+    }
+  }),
   getPublicContentDetail: vi.fn(async (slug: string) =>
     slug === "blog-1"
       ? {
@@ -341,7 +371,7 @@ describe("public-content adapter", () => {
     expect(data.items[0]).toHaveProperty("sourceName")
     expect(data.items[0]).toHaveProperty("creatorName")
     expect(data.sources).toBeDefined()
-    expect(data.sources).toHaveLength(2)
+    expect(data.sources!.length).toBeGreaterThanOrEqual(2)
     expect(data.sources?.find((item) => item.handle === "karpathy")).toMatchObject({
       name: "Andrej Karpathy",
       typeLabel: "X 账号",
@@ -354,6 +384,8 @@ describe("public-content adapter", () => {
       typeLabel: "播客",
       description: expect.any(String),
     })
+    expect(data.nextCursor).toBeNull()
+    expect(data.hasMore).toBe(false)
   })
 
   it("builds latest, deep and detail page data from the shared adapter layer", async () => {
@@ -361,8 +393,8 @@ describe("public-content adapter", () => {
     const deep = await getDeepPageData()
     const detail = await getContentDetailPageData("blog-1")
 
-    expect(latest.groups.length).toBeGreaterThan(0)
-    expect(deep.leadItem?.cardType).toBe("digest")
+    expect(latest.items.length).toBeGreaterThan(0)
+    expect(deep.items[0]?.cardType).toBe("digest")
     expect(deep.items.every((item) => item.category === "article")).toBe(true)
     expect(detail?.item.slug).toBe("blog-1")
     expect(detail?.item.originalText).toContain("Execution loops")

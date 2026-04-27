@@ -24,13 +24,15 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card"
+import { useInfiniteContent } from "@/hooks/use-infinite-content"
 import {
-  filterContentItems,
+  feedItemToContentListItem,
   groupContentItems,
   type CategoryFilter,
   type CategoryOption,
   type ContentListItem,
   type DailySummaryViewModel,
+  type FeedApiResponse,
 } from "@/modules/content/public-content.view-model"
 import { type SourceDirectoryItem } from "@/modules/sources/source-directory"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -47,27 +49,73 @@ function formatSourceCount(count: number) {
   return `${count} ${count === 1 ? "source" : "sources"}`
 }
 
+const CATEGORY_PAGE_SIZE = 20
+
 export function HomePageClient({
   initialItems,
   categories,
   sources = [],
   dailySummaries = {},
+  initialCursor,
+  initialHasMore,
 }: {
   initialItems: ContentListItem[]
   categories: CategoryOption[]
   sources?: SourceDirectoryItem[]
   dailySummaries?: Record<string, DailySummaryViewModel>
+  initialCursor: string | null
+  initialHasMore: boolean
 }) {
   const [activeCategory, setActiveCategory] = React.useState<CategoryFilter>("all")
   const [showAllSources, setShowAllSources] = React.useState(false)
 
-  const filteredItems = React.useMemo(
-    () => filterContentItems(initialItems, activeCategory),
-    [activeCategory, initialItems]
+  const [categoryItems, setCategoryItems] = React.useState(initialItems)
+  const [categoryCursor, setCategoryCursor] = React.useState(initialCursor)
+  const [categoryHasMore, setCategoryHasMore] = React.useState(initialHasMore)
+  const [categoryLoading, setCategoryLoading] = React.useState(false)
+
+  const handleCategoryChange = React.useCallback(
+    async (newCategory: CategoryFilter) => {
+      setActiveCategory(newCategory)
+
+      if (newCategory === "all") {
+        setCategoryItems(initialItems)
+        setCategoryCursor(initialCursor)
+        setCategoryHasMore(initialHasMore)
+        return
+      }
+
+      setCategoryLoading(true)
+      try {
+        const params = new URLSearchParams({
+          limit: String(CATEGORY_PAGE_SIZE),
+          category: newCategory,
+        })
+        const response = await fetch(`/api/content/feed?${params}`)
+        const data: FeedApiResponse = await response.json()
+        const items = data.groups.flatMap((group) =>
+          group.items.map(feedItemToContentListItem)
+        )
+        setCategoryItems(items)
+        setCategoryCursor(data.pagination.nextCursor)
+        setCategoryHasMore(data.pagination.hasMore)
+      } finally {
+        setCategoryLoading(false)
+      }
+    },
+    [initialItems, initialCursor, initialHasMore]
   )
+
+  const { items, isLoading, hasMore, sentinelRef } = useInfiniteContent({
+    initialItems: categoryItems,
+    initialCursor: categoryCursor,
+    initialHasMore: categoryHasMore,
+    category: activeCategory,
+  })
+
   const dateGroups = React.useMemo(
-    () => groupContentItems(filteredItems, dailySummaries),
-    [filteredItems, dailySummaries]
+    () => groupContentItems(items, dailySummaries),
+    [items, dailySummaries]
   )
   const marqueeSources = React.useMemo(
     () => (sources.length > 1 ? [...sources, ...sources] : sources),
@@ -84,7 +132,7 @@ export function HomePageClient({
         activeNav="home"
         categories={categories}
         activeCategory={activeCategory}
-        onSelectCategory={setActiveCategory}
+        onSelectCategory={handleCategoryChange}
       />
 
       <main className="app-shell pb-24 pt-8">
@@ -282,7 +330,7 @@ export function HomePageClient({
             <CategorySidebar
               categories={categories}
               activeCategory={activeCategory}
-              onSelectCategory={setActiveCategory}
+              onSelectCategory={handleCategoryChange}
             />
           </div>
 
@@ -290,7 +338,7 @@ export function HomePageClient({
             <div className="xl:hidden">
               <Tabs
                 value={activeCategory}
-                onValueChange={(value) => setActiveCategory(value as CategoryFilter)}
+                onValueChange={(value) => handleCategoryChange(value as CategoryFilter)}
               >
                 <TabsList className="grid h-auto grid-cols-3 gap-2 rounded-3xl bg-transparent p-0 sm:grid-cols-3">
                   {categories.map((category) => (
@@ -309,44 +357,62 @@ export function HomePageClient({
             <div className="relative pl-8 sm:pl-10">
               <div className="pointer-events-none absolute left-3 top-3 bottom-0 w-px bg-linear-to-b from-primary/18 via-border/80 to-transparent sm:left-4" />
 
-              {dateGroups.map((group, groupIndex) => (
-                <section key={group.key} className="timeline-section relative space-y-5 pb-10 last:pb-0">
-                  <RevealOnScroll delay={groupIndex * 80}>
-                    <div className="sticky top-20 z-10 -mx-2 rounded-2xl bg-background/78 px-2 py-1 supports-backdrop-filter:backdrop-blur-md sm:top-22">
-                      <div className="absolute top-3 -left-6 flex h-8 w-8 items-center justify-center sm:-left-8 sm:h-9 sm:w-9">
-                        <span className="timeline-dot" />
+              {categoryLoading ? (
+                <div className="flex justify-center py-12">
+                  <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
+                </div>
+              ) : (
+                dateGroups.map((group, groupIndex) => (
+                  <section key={group.key} className="timeline-section relative space-y-5 pb-10 last:pb-0">
+                    <RevealOnScroll delay={groupIndex * 80}>
+                      <div className="sticky top-20 z-10 -mx-2 rounded-2xl bg-background/78 px-2 py-1 supports-backdrop-filter:backdrop-blur-md sm:top-22">
+                        <div className="absolute top-3 -left-6 flex h-8 w-8 items-center justify-center sm:-left-8 sm:h-9 sm:w-9">
+                          <span className="timeline-dot" />
+                        </div>
+                        <DateGroupHeading label={group.label} count={group.items.length} />
                       </div>
-                      <DateGroupHeading label={group.label} count={group.items.length} />
-                    </div>
-                  </RevealOnScroll>
-
-                  {group.dailySummary ? (
-                    <RevealOnScroll delay={groupIndex * 80 + 40}>
-                      <DailySummaryCard summary={group.dailySummary} />
                     </RevealOnScroll>
+
+                    {group.dailySummary ? (
+                      <RevealOnScroll delay={groupIndex * 80 + 40}>
+                        <DailySummaryCard summary={group.dailySummary} />
+                      </RevealOnScroll>
+                    ) : null}
+
+                    <div className="grid gap-5 md:grid-cols-2">
+                      {group.items.map((item, itemIndex) => {
+                        const delay = Math.min(240, 110 + itemIndex * 55)
+
+                        return item.cardType === "digest" ? (
+                          <RevealOnScroll
+                            key={item.slug}
+                            delay={delay}
+                            className="md:col-span-2"
+                          >
+                            <DigestContentCard item={item} />
+                          </RevealOnScroll>
+                        ) : (
+                          <RevealOnScroll key={item.slug} delay={delay}>
+                            <StandardContentCard item={item} />
+                          </RevealOnScroll>
+                        )
+                      })}
+                    </div>
+                  </section>
+                ))
+              )}
+
+              {hasMore ? (
+                <div ref={sentinelRef} className="flex justify-center py-8">
+                  {isLoading ? (
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary/30 border-t-primary" />
                   ) : null}
-
-                  <div className="grid gap-5 md:grid-cols-2">
-                    {group.items.map((item, itemIndex) => {
-                      const delay = Math.min(240, 110 + itemIndex * 55)
-
-                      return item.cardType === "digest" ? (
-                        <RevealOnScroll
-                          key={item.slug}
-                          delay={delay}
-                          className="md:col-span-2"
-                        >
-                          <DigestContentCard item={item} />
-                        </RevealOnScroll>
-                      ) : (
-                        <RevealOnScroll key={item.slug} delay={delay}>
-                          <StandardContentCard item={item} />
-                        </RevealOnScroll>
-                      )
-                    })}
-                  </div>
-                </section>
-              ))}
+                </div>
+              ) : items.length > 0 ? (
+                <p className="py-8 text-center text-sm text-muted-foreground">
+                  已加载全部内容
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
