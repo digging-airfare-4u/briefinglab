@@ -41,7 +41,34 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-40 border-b border-border/60 bg-background/78 supports-backdrop-filter:backdrop-blur-xl">
       <div className="app-shell flex h-18 items-center justify-between gap-4">
-        <div className="flex items-center gap-8">
+        <div className="flex items-center gap-6 lg:gap-8">
+          <Link
+            href="/"
+            aria-label="AI 资讯 · 首页"
+            className="group flex items-center gap-2.5"
+          >
+            <span className="relative flex size-9 shrink-0 items-center justify-center rounded-[0.8rem] bg-gradient-to-br from-primary to-primary/70 text-primary-foreground shadow-lg shadow-primary/25 ring-1 ring-white/25 transition-transform duration-300 group-hover:-rotate-3 group-hover:scale-[1.06]">
+              <svg
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="size-[18px]"
+                aria-hidden="true"
+              >
+                <rect x="4" y="5" width="16" height="2.6" rx="1.3" />
+                <rect x="4" y="10.7" width="11" height="2.6" rx="1.3" opacity="0.82" />
+                <rect x="4" y="16.4" width="14" height="2.6" rx="1.3" opacity="0.62" />
+              </svg>
+            </span>
+            <span className="flex flex-col leading-none">
+              <span className="font-heading text-[0.95rem] font-bold tracking-tight text-foreground">
+                AI 资讯
+              </span>
+              <span className="mt-1 font-mono text-[9px] uppercase tracking-[0.22em] text-muted-foreground transition-colors group-hover:text-primary/80">
+                DAILY DIGEST
+              </span>
+            </span>
+          </Link>
+
           <nav className="hidden items-center gap-1 md:flex">
             {navigationItems.map((item) => (
               <Button

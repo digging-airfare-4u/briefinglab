@@ -27,6 +27,7 @@ import {
 import { useInfiniteContent } from "@/hooks/use-infinite-content"
 import {
   feedItemToContentListItem,
+  formatTime,
   groupContentItems,
   type CategoryFilter,
   type CategoryOption,
@@ -117,6 +118,12 @@ export function HomePageClient({
     () => groupContentItems(items, dailySummaries),
     [items, dailySummaries]
   )
+  const lastUpdatedLabel = React.useMemo(() => {
+    const latest = items[0]
+    if (!latest) return null
+    const date = new Date(latest.publishedAt)
+    return `${date.getMonth() + 1}月${date.getDate()}日 ${formatTime(latest.publishedAt)}`
+  }, [items])
   const marqueeSources = React.useMemo(
     () => (sources.length > 1 ? [...sources, ...sources] : sources),
     [sources]
@@ -136,13 +143,52 @@ export function HomePageClient({
       />
 
       <main className="app-shell pb-24 pt-8">
-        <section className="mb-7">
-          <h1 className="font-heading text-2xl font-semibold tracking-tight text-foreground md:text-[2rem]">
-            AI 内容流
-          </h1>
-          <p className="mt-1 text-sm leading-6 text-muted-foreground">
-            按日期整理的文章与动态。
-          </p>
+        <section className="relative mb-8">
+          <div className="flex items-center gap-2">
+            <span className="relative flex size-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/50" />
+              <span className="relative inline-flex size-2 rounded-full bg-primary" />
+            </span>
+            <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-muted-foreground">
+              每日 AI 动向 · 实时聚合
+            </p>
+          </div>
+
+          <div className="mt-3 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1 className="font-heading text-[2.5rem] font-bold leading-[1.04] tracking-tight text-foreground md:text-[3.25rem]">
+                AI 内容流
+              </h1>
+              <p className="mt-2.5 max-w-lg text-sm leading-7 text-muted-foreground md:text-[0.95rem]">
+                按日期整理的文章与动态，先给摘要，再给原文。
+              </p>
+            </div>
+
+            {sources.length > 0 || lastUpdatedLabel ? (
+              <div className="flex items-stretch gap-2.5 md:pb-1.5">
+                {sources.length > 0 ? (
+                  <div className="rounded-[1.1rem] border border-white/55 bg-white/68 px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-white/10 dark:bg-white/8">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+                      来源
+                    </p>
+                    <p className="mt-0.5 font-heading text-lg font-semibold leading-none text-foreground">
+                      {sources.length}
+                    </p>
+                  </div>
+                ) : null}
+                {lastUpdatedLabel ? (
+                  <div className="rounded-[1.1rem] border border-white/55 bg-white/68 px-3.5 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] dark:border-white/10 dark:bg-white/8">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.24em] text-muted-foreground">
+                      最近更新
+                    </p>
+                    <p className="mt-1 text-sm font-semibold leading-none text-foreground">
+                      {lastUpdatedLabel}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </section>
 
         {sources.length > 0 ? (
@@ -409,9 +455,15 @@ export function HomePageClient({
                   ) : null}
                 </div>
               ) : items.length > 0 ? (
-                <p className="py-8 text-center text-sm text-muted-foreground">
-                  已加载全部内容
-                </p>
+                <div className="flex items-center justify-center gap-3 py-10">
+                  <span className="h-px w-10 bg-gradient-to-r from-transparent to-border/80" />
+                  <span className="size-1.5 rounded-full bg-primary/40" />
+                  <span className="text-xs tracking-wide text-muted-foreground">
+                    已加载全部内容
+                  </span>
+                  <span className="size-1.5 rounded-full bg-primary/40" />
+                  <span className="h-px w-10 bg-gradient-to-l from-transparent to-border/80" />
+                </div>
               ) : null}
             </div>
           </div>

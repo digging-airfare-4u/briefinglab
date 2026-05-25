@@ -31,7 +31,7 @@ export function StandardContentCard({ item }: { item: ContentListItem }) {
   const Icon = meta.icon
 
   return (
-    <Card className="gap-0 bg-transparent shadow-none transition-colors hover:bg-card/50">
+    <Card className="gap-0 bg-card/40 shadow-[0_10px_30px_-22px_rgba(15,23,42,0.22)] ring-foreground/[0.07] transition-all duration-300 hover:-translate-y-0.5 hover:bg-card/75 hover:shadow-[0_22px_44px_-26px_rgba(15,23,42,0.3)] hover:ring-primary/20">
       <CardHeader className="gap-2 px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Badge className="rounded-full bg-primary/8 text-primary hover:bg-primary/8">
@@ -74,7 +74,7 @@ export function DigestContentCard({ item }: { item: ContentListItem }) {
   const body = item.hasSummary ? item.summary : item.excerpt
 
   return (
-    <Card className="gap-0 overflow-hidden border-l-4 border-primary bg-transparent shadow-none transition-colors hover:border-l-primary/80">
+    <Card className="gap-0 overflow-hidden border-l-4 border-primary bg-card/50 shadow-[0_12px_34px_-22px_rgba(15,23,42,0.26)] ring-foreground/[0.07] transition-all duration-300 hover:-translate-y-0.5 hover:border-l-primary/80 hover:bg-card/80 hover:shadow-[0_24px_48px_-26px_rgba(15,23,42,0.32)] hover:ring-primary/20">
       <CardHeader className="gap-2 px-4 pt-4 pb-0">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Badge className="rounded-full bg-primary text-primary-foreground hover:bg-primary">
